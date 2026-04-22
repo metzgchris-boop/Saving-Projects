@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saving Projects Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <template id="__bundler_thumbnail" data-bg-color="#18202F">
+    <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+      <!-- Sidebar -->
+      <rect x="0" y="0" width="22" height="80" fill="#18202F"/>
+      <rect x="4" y="12" width="14" height="2" rx="1" fill="rgba(255,255,255,0.5)"/>
+      <rect x="4" y="20" width="10" height="2" rx="1" fill="rgba(255,255,255,0.25)"/>
+      <rect x="4" y="26" width="12" height="2" rx="1" fill="rgba(255,255,255,0.25)"/>
+      <rect x="4" y="32" width="9" height="2" rx="1" fill="rgba(255,255,255,0.25)"/>
+      <!-- Main BG -->
+      <rect x="22" y="0" width="98" height="80" fill="#F4F6FA"/>
+      <!-- Header -->
+      <rect x="22" y="0" width="98" height="10" fill="#fff"/>
+      <rect x="26" y="3.5" width="20" height="3" rx="1.5" fill="#111827"/>
+      <!-- KPI cards -->
+      <rect x="26" y="14" width="20" height="12" rx="2" fill="#fff"/>
+      <rect x="50" y="14" width="20" height="12" rx="2" fill="#fff"/>
+      <rect x="74" y="14" width="20" height="12" rx="2" fill="#fff"/>
+      <rect x="98" y="14" width="18" height="12" rx="2" fill="#fff"/>
+      <rect x="29" y="17" width="10" height="2" rx="1" fill="#9CA3AF"/>
+      <rect x="29" y="21" width="14" height="2.5" rx="1" fill="#3D6FE8"/>
+      <rect x="53" y="17" width="10" height="2" rx="1" fill="#9CA3AF"/>
+      <rect x="53" y="21" width="12" height="2.5" rx="1" fill="#22C55E"/>
+      <rect x="77" y="17" width="10" height="2" rx="1" fill="#9CA3AF"/>
+      <rect x="77" y="21" width="10" height="2.5" rx="1" fill="#F59E0B"/>
+      <rect x="101" y="17" width="10" height="2" rx="1" fill="#9CA3AF"/>
+      <rect x="101" y="21" width="11" height="2.5" rx="1" fill="#94A3B8"/>
+      <!-- Charts row -->
+      <rect x="26" y="30" width="28" height="28" rx="2" fill="#fff"/>
+      <circle cx="40" cy="44" r="9" fill="none" stroke="#E5E7EB" strokeWidth="3"/>
+      <circle cx="40" cy="44" r="9" fill="none" stroke="#3D6FE8" strokeWidth="3" strokeDasharray="36 21" strokeLinecap="round" transform="rotate(-90 40 44)"/>
+      <rect x="58" y="30" width="58" height="28" rx="2" fill="#fff"/>
+      <rect x="62" y="36" width="30" height="3" rx="1.5" fill="#3D6FE8" opacity="0.8"/>
+      <rect x="62" y="42" width="20" height="3" rx="1.5" fill="#3D6FE8" opacity="0.6"/>
+      <rect x="62" y="48" width="40" height="3" rx="1.5" fill="#3D6FE8" opacity="0.7"/>
+      <rect x="62" y="54" width="15" height="3" rx="1.5" fill="#3D6FE8" opacity="0.5"/>
+      <!-- Table -->
+      <rect x="26" y="62" width="90" height="14" rx="2" fill="#fff"/>
+      <rect x="30" y="66" width="35" height="2" rx="1" fill="#E5E7EB"/>
+      <rect x="30" y="70" width="50" height="2" rx="1" fill="#E5E7EB"/>
+    </svg>
+  </template>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; }
+    body { font-family: 'DM Sans', sans-serif; background: #F4F6FA; color: #111827; -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
+    input, select, textarea, button { font-family: inherit; }
+    button { cursor: pointer; }
+    input[type="color"] { padding: 0; border: none; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ── Constants ────────────────────────────────────────────────
+const STATUS       = { open: 'Open', in_progress: 'In Progress', completed: 'Completed' };
+const STATUS_CLR   = { open: '#94A3B8', in_progress: '#F59E0B', completed: '#22C55E' };
+const STATUS_BG    = { open: '#F1F5F9', in_progress: '#FFFBEB', completed: '#F0FDF4' };
+const MEASURE_TYPES = ['Negotiation', 'Substitution', 'Volume Optimization', 'Process Optimization', 'Specification Change', 'Other'];
+const CATEGORIES   = ['Raw Materials', 'Packaging', 'Logistics', 'IT & Electronics', 'MRO & Office', 'Services', 'Other'];
+const NAV = [
+  { key: 'dashboard',  label: 'Dashboard',  svg: <svg width="15" height="15" fill="none" viewBox="0 0 15 15"><rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="1" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/></svg> },
+  { key: 'list',       label: 'Projects',   svg: <svg width="15" height="15" fill="none" viewBox="0 0 15 15"><rect x="1" y="2" width="13" height="1.5" rx=".75" fill="currentColor"/><rect x="1" y="6.75" width="13" height="1.5" rx=".75" fill="currentColor"/><rect x="1" y="11.5" width="13" height="1.5" rx=".75" fill="currentColor"/></svg> },
+  { key: 'kanban',     label: 'Board',      svg: <svg width="15" height="15" fill="none" viewBox="0 0 15 15"><rect x="1" y="1" width="3.5" height="13" rx="1.5" fill="currentColor"/><rect x="5.75" y="1" width="3.5" height="9" rx="1.5" fill="currentColor"/><rect x="10.5" y="1" width="3.5" height="11" rx="1.5" fill="currentColor"/></svg> },
+  { key: 'battleplan', label: 'Battleplan', svg: <svg width="15" height="15" fill="none" viewBox="0 0 15 15"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.5"/><circle cx="7.5" cy="7.5" r="2" fill="currentColor"/><line x1="7.5" y1="1" x2="7.5" y2="4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="7.5" y1="10.5" x2="7.5" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="1" y1="7.5" x2="4.5" y2="7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="10.5" y1="7.5" x2="14" y2="7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+];
+
+// ── Battleplan Constants ─────────────────────────────────────
+const PC_STATUS     = { started: 'Started', in_negotiation: 'In Negotiation', agreement_done: 'Agreement Done' };
+const PC_STATUS_CLR = { started: '#F59E0B', in_negotiation: '#3D6FE8', agreement_done: '#22C55E' };
+const PC_STATUS_BG  = { started: '#FFFBEB', in_negotiation: '#EEF4FF', agreement_done: '#F0FDF4' };
+
+const SAMPLE_SUPPLIERS = [
+  { id:'s1', number:'SUP-001', name:'ThyssenKrupp AG',       commodity:'Raw Materials',    volume:1200000 },
+  { id:'s2', number:'SUP-002', name:'DS Smith GmbH',         commodity:'Packaging',        volume:380000  },
+  { id:'s3', number:'SUP-003', name:'DHL Supply Chain',      commodity:'Logistics',        volume:950000  },
+  { id:'s4', number:'SUP-004', name:'Dell Technologies',     commodity:'IT & Electronics', volume:420000  },
+  { id:'s5', number:'SUP-005', name:'BASF SE',               commodity:'Raw Materials',    volume:880000  },
+  { id:'s6', number:'SUP-006', name:'Siemens Service GmbH',  commodity:'Services',         volume:310000  },
+  { id:'s7', number:'SUP-007', name:'DB Schenker AG',        commodity:'Logistics',        volume:540000  },
+  { id:'s8', number:'SUP-008', name:'Staples Business',      commodity:'MRO & Office',     volume:95000   },
+];
+const SAMPLE_PC = [
+  { id:'pc1', supplierId:'s1', percent:5.5, startDate:'2026-04-01', endDate:'2026-12-31', status:'in_negotiation' },
+  { id:'pc2', supplierId:'s1', percent:2.0, startDate:'2026-01-01', endDate:'2026-03-31', status:'agreement_done' },
+  { id:'pc3', supplierId:'s3', percent:3.8, startDate:'2026-03-01', endDate:'2026-12-31', status:'started'        },
+  { id:'pc4', supplierId:'s5', percent:7.2, startDate:'2026-05-01', endDate:'2026-12-31', status:'in_negotiation' },
+  { id:'pc5', supplierId:'s7', percent:4.5, startDate:'2026-04-01', endDate:'2026-09-30', status:'started'        },
+];
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "annualTarget": 600000,
+  "accentColor": "#3D6FE8",
+  "currency": "€"
+}/*EDITMODE-END*/;
+
+const SAMPLE_DATA = [
+  { id: '1', number: 'SP-001', title: 'Raw Material Renegotiation – Steel', owner: 'M. Weber',    category: 'Raw Materials',    supplier: 'ThyssenKrupp AG',    savingsAmount: 120000, savingsPercent: 8.5,  status: 'completed',  startDate: '2026-01-10', deadline: '2026-03-31', measureType: 'Negotiation',          comments: 'Multi-year contract secured. Volume commitments included.' },
+  { id: '2', number: 'SP-002', title: 'Packaging Material Substitution',      owner: 'S. Müller',  category: 'Packaging',        supplier: 'DS Smith GmbH',      savingsAmount: 45000,  savingsPercent: 12.0, status: 'completed',  startDate: '2026-01-15', deadline: '2026-04-30', measureType: 'Substitution',         comments: '' },
+  { id: '3', number: 'SP-003', title: 'Logistics Cost Reduction',             owner: 'K. Schneider', category: 'Logistics',      supplier: 'DHL Supply Chain',   savingsAmount: 80000,  savingsPercent: 6.2,  status: 'in_progress',startDate: '2026-02-01', deadline: '2026-06-30', measureType: 'Negotiation',          comments: 'Final contract terms under review with legal.' },
+  { id: '4', number: 'SP-004', title: 'IT Hardware Consolidation',            owner: 'M. Weber',    category: 'IT & Electronics', supplier: 'Dell Technologies',  savingsAmount: 55000,  savingsPercent: 15.0, status: 'in_progress',startDate: '2026-02-15', deadline: '2026-05-31', measureType: 'Volume Optimization',  comments: '' },
+  { id: '5', number: 'SP-005', title: 'Office Supplies Framework Agreement',  owner: 'A. Fischer',  category: 'MRO & Office',     supplier: 'Staples Business',   savingsAmount: 18000,  savingsPercent: 22.0, status: 'in_progress',startDate: '2026-03-01', deadline: '2026-07-31', measureType: 'Substitution',         comments: '' },
+  { id: '6', number: 'SP-006', title: 'Chemical Procurement Strategy',        owner: 'S. Müller',   category: 'Raw Materials',    supplier: 'BASF SE',            savingsAmount: 95000,  savingsPercent: 9.8,  status: 'open',       startDate: '2026-04-01', deadline: '2026-09-30', measureType: 'Negotiation',          comments: 'RFQ being prepared. 3 bidders shortlisted.' },
+  { id: '7', number: 'SP-007', title: 'Maintenance Contract Renewal',         owner: 'K. Schneider',category: 'Services',         supplier: 'Siemens Service GmbH',savingsAmount: 32000, savingsPercent: 7.5,  status: 'open',       startDate: '2026-04-15', deadline: '2026-08-31', measureType: 'Process Optimization', comments: '' },
+  { id: '8', number: 'SP-008', title: 'Transport Route Optimization',         owner: 'A. Fischer',  category: 'Logistics',        supplier: 'DB Schenker AG',     savingsAmount: 28000,  savingsPercent: 11.2, status: 'open',       startDate: '2026-05-01', deadline: '2026-10-31', measureType: 'Volume Optimization',  comments: '' },
+];
+
+// ── Helpers ──────────────────────────────────────────────────
+const fmtEur = (n, cur = '€') => `${cur}\u202F${Number(n).toLocaleString('de-DE')}`;
+const fmtPct = n => `${Number(n).toFixed(1)} %`;
+const genId  = () => Math.random().toString(36).slice(2, 9);
+const nextNum = ps => `SP-${String(ps.length + 1).padStart(3, '0')}`;
+
+// ── Badge ────────────────────────────────────────────────────
+function Badge({ status }) {
+  return (
+    <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:600, background:STATUS_BG[status], color:STATUS_CLR[status] }}>
+      <span style={{ width:6, height:6, borderRadius:'50%', background:STATUS_CLR[status], flexShrink:0 }} />
+      {STATUS[status]}
+    </span>
+  );
+}
+
+// ── Ring ─────────────────────────────────────────────────────
+function Ring({ pct, color, size = 110 }) {
+  const r = (size - 18) / 2;
+  const circ = 2 * Math.PI * r;
+  const fill = Math.min(pct / 100, 1) * circ;
+  return (
+    <svg width={size} height={size} style={{ transform:'rotate(-90deg)', flexShrink:0 }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E5E7EB" strokeWidth={9} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={9}
+        strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" style={{ transition:'stroke-dasharray 0.9s ease' }} />
+    </svg>
+  );
+}
+
+// ── HBar Chart ───────────────────────────────────────────────
+function HBar({ data, accent }) {
+  const max = Math.max(...data.map(d => d.v), 1);
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
+      {data.map(d => {
+        const w = (d.v / max) * 100;
+        return (
+          <div key={d.k} style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:132, fontSize:11, color:'#6B7280', textAlign:'right', flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.k}</div>
+            <div style={{ flex:1, height:22, background:'#F1F5F9', borderRadius:5, overflow:'hidden', position:'relative' }}>
+              <div style={{ position:'absolute', inset:0, width:`${w}%`, background: accent + 'CC', borderRadius:5, transition:'width 0.7s ease', display:'flex', alignItems:'center', paddingLeft:8 }}>
+                {w > 35 && <span style={{ fontSize:10, color:'#fff', fontWeight:700 }}>{fmtEur(d.v)}</span>}
+              </div>
+            </div>
+            {w <= 35 && <span style={{ fontSize:10, fontWeight:600, color:'#374151', flexShrink:0 }}>{fmtEur(d.v)}</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Dashboard ────────────────────────────────────────────────
+function Dashboard({ projects, tweaks }) {
+  const total     = projects.reduce((s,p) => s + Number(p.savingsAmount), 0);
+  const completed = projects.filter(p => p.status === 'completed').reduce((s,p) => s + Number(p.savingsAmount), 0);
+  const inProg    = projects.filter(p => p.status === 'in_progress').reduce((s,p) => s + Number(p.savingsAmount), 0);
+  const open      = projects.filter(p => p.status === 'open').reduce((s,p) => s + Number(p.savingsAmount), 0);
+  const avgPct    = projects.length ? projects.reduce((s,p) => s + Number(p.savingsPercent), 0) / projects.length : 0;
+  const targetPct = tweaks.annualTarget ? (total / tweaks.annualTarget * 100) : 0;
+
+  const byCat = CATEGORIES.map(c => ({ k:c, v:projects.filter(p=>p.category===c).reduce((s,p)=>s+Number(p.savingsAmount),0) }))
+    .filter(d => d.v > 0).sort((a,b) => b.v - a.v);
+
+  const suppMap = {};
+  projects.forEach(p => { suppMap[p.supplier] = (suppMap[p.supplier]||0) + Number(p.savingsAmount); });
+  const topSupp = Object.entries(suppMap).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v).slice(0,5);
+
+  const KPI = ({ label, val, sub, color='#111827' }) => (
+    <div style={{ background:'#fff', borderRadius:12, padding:'18px 22px', border:'1px solid #E8EBF0', flex:1, minWidth:140 }}>
+      <div style={{ fontSize:11, fontWeight:600, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>{label}</div>
+      <div style={{ fontSize:24, fontWeight:700, color, letterSpacing:'-0.5px', lineHeight:1 }}>{val}</div>
+      {sub && <div style={{ fontSize:11, color:'#B0B7C3', marginTop:4 }}>{sub}</div>}
+    </div>
+  );
+
+  const StatusRow = ({ s }) => {
+    const v = s === 'completed' ? completed : s === 'in_progress' ? inProg : open;
+    const cnt = projects.filter(p=>p.status===s).length;
+    const pct = total ? v/total*100 : 0;
+    return (
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+        <span style={{ width:8, height:8, borderRadius:'50%', background:STATUS_CLR[s], flexShrink:0 }} />
+        <span style={{ fontSize:12, color:'#374151', width:90, flexShrink:0 }}>{STATUS[s]}</span>
+        <div style={{ flex:1, height:6, background:'#F1F5F9', borderRadius:3, overflow:'hidden' }}>
+          <div style={{ height:'100%', width:`${pct}%`, background:STATUS_CLR[s], borderRadius:3, transition:'width 0.6s ease' }} />
+        </div>
+        <span style={{ fontSize:11, fontWeight:600, color:'#6B7280', width:80, textAlign:'right' }}>{fmtEur(v, tweaks.currency)}</span>
+        <span style={{ fontSize:11, color:'#B0B7C3', width:20 }}>{cnt}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ flex:1, overflowY:'auto', padding:'28px 32px', display:'flex', flexDirection:'column', gap:20 }}>
+      {/* KPI Row */}
+      <div style={{ display:'flex', gap:14, flexWrap:'wrap' }}>
+        <KPI label="Total Savings" val={fmtEur(total, tweaks.currency)} sub={`${projects.length} active projects`} color={tweaks.accentColor} />
+        <KPI label="Completed"     val={fmtEur(completed, tweaks.currency)} sub={`${projects.filter(p=>p.status==='completed').length} projects`} color="#22C55E" />
+        <KPI label="In Progress"   val={fmtEur(inProg, tweaks.currency)}    sub={`${projects.filter(p=>p.status==='in_progress').length} projects`} color="#F59E0B" />
+        <KPI label="Pipeline"      val={fmtEur(open, tweaks.currency)}       sub={`${projects.filter(p=>p.status==='open').length} projects`} color="#94A3B8" />
+        <KPI label="Avg. Savings"  val={fmtPct(avgPct)} sub="across all projects" />
+      </div>
+
+      {/* Row 2: Target + Status breakdown + Category */}
+      <div style={{ display:'flex', gap:16, flexWrap:'wrap', alignItems:'flex-start' }}>
+        {/* Annual Target */}
+        <div style={{ background:'#fff', borderRadius:12, padding:'22px 24px', border:'1px solid #E8EBF0', minWidth:260, flex:'0 0 260px' }}>
+          <div style={{ fontSize:12, fontWeight:700, color:'#374151', marginBottom:18, letterSpacing:'0.02em' }}>Annual Target</div>
+          <div style={{ display:'flex', alignItems:'center', gap:18 }}>
+            <div style={{ position:'relative', flexShrink:0 }}>
+              <Ring pct={targetPct} color={tweaks.accentColor} />
+              <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+                <div style={{ fontSize:18, fontWeight:700, color:'#111827' }}>{Math.round(targetPct)}%</div>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize:11, color:'#9CA3AF', marginBottom:2 }}>Achieved</div>
+              <div style={{ fontWeight:700, fontSize:15, color:'#111827' }}>{fmtEur(total, tweaks.currency)}</div>
+              <div style={{ fontSize:11, color:'#9CA3AF', marginTop:10, marginBottom:2 }}>Target</div>
+              <div style={{ fontWeight:600, fontSize:13, color:'#374151' }}>{fmtEur(tweaks.annualTarget, tweaks.currency)}</div>
+              <div style={{ fontSize:11, color: total >= tweaks.annualTarget ? '#22C55E' : '#9CA3AF', marginTop:8, fontWeight:500 }}>
+                {total >= tweaks.annualTarget ? '✓ Target reached' : `${fmtEur(tweaks.annualTarget - total, tweaks.currency)} remaining`}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Status breakdown */}
+        <div style={{ background:'#fff', borderRadius:12, padding:'22px 24px', border:'1px solid #E8EBF0', flex:'1', minWidth:240 }}>
+          <div style={{ fontSize:12, fontWeight:700, color:'#374151', marginBottom:18, letterSpacing:'0.02em' }}>Savings by Status</div>
+          <StatusRow s="completed" />
+          <StatusRow s="in_progress" />
+          <StatusRow s="open" />
+        </div>
+
+        {/* Category chart */}
+        <div style={{ background:'#fff', borderRadius:12, padding:'22px 24px', border:'1px solid #E8EBF0', flex:'2', minWidth:280 }}>
+          <div style={{ fontSize:12, fontWeight:700, color:'#374151', marginBottom:18, letterSpacing:'0.02em' }}>Savings by Category</div>
+          <HBar data={byCat} accent={tweaks.accentColor} />
+        </div>
+      </div>
+
+      {/* Top Suppliers */}
+      <div style={{ background:'#fff', borderRadius:12, padding:'22px 24px', border:'1px solid #E8EBF0' }}>
+        <div style={{ fontSize:12, fontWeight:700, color:'#374151', marginBottom:16, letterSpacing:'0.02em' }}>Top Suppliers by Savings Potential</div>
+        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+          <thead>
+            <tr>
+              {['#','Supplier','Total Savings','Share of Portfolio'].map(h => (
+                <th key={h} style={{ padding:'8px 14px', textAlign: h==='#' || h==='Supplier' ? 'left' : 'right', fontWeight:600, color:'#9CA3AF', fontSize:10, textTransform:'uppercase', letterSpacing:'0.07em', borderBottom:'1px solid #F3F4F6' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {topSupp.map((s, i) => (
+              <tr key={s.k} style={{ borderBottom:'1px solid #F9FAFB' }}>
+                <td style={{ padding:'11px 14px', width:32 }}>
+                  <span style={{ width:22, height:22, borderRadius:'50%', background:`${tweaks.accentColor}18`, color:tweaks.accentColor, fontSize:10, fontWeight:700, display:'inline-flex', alignItems:'center', justifyContent:'center' }}>{i+1}</span>
+                </td>
+                <td style={{ padding:'11px 14px', fontWeight:500, color:'#111827' }}>{s.k}</td>
+                <td style={{ padding:'11px 14px', textAlign:'right', fontWeight:700, color:'#111827' }}>{fmtEur(s.v, tweaks.currency)}</td>
+                <td style={{ padding:'11px 14px', textAlign:'right' }}>
+                  <span style={{ background:'#F1F5F9', color:'#6B7280', padding:'2px 10px', borderRadius:20, fontSize:11, fontWeight:500 }}>{fmtPct(total ? s.v/total*100 : 0)}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── List View ────────────────────────────────────────────────
+const COLS = [
+  { key:'number',        label:'No.',      w:72,  align:'left' },
+  { key:'title',         label:'Project',  flex:1, align:'left' },
+  { key:'owner',         label:'Owner',    w:110, align:'left' },
+  { key:'category',      label:'Category', w:130, align:'left' },
+  { key:'supplier',      label:'Supplier', w:155, align:'left' },
+  { key:'savingsAmount', label:'Savings',  w:115, align:'right' },
+  { key:'savingsPercent',label:'%',        w:70,  align:'right' },
+  { key:'status',        label:'Status',   w:130, align:'left' },
+  { key:'deadline',      label:'Deadline', w:100, align:'left' },
+];
+const EDITABLE = ['title','owner','supplier','savingsAmount','savingsPercent','status','deadline','category'];
+
+function ListView({ projects, onEdit, onDelete, onAdd, tweaks }) {
+  const [q,       setQ]       = useState('');
+  const [fStatus, setFStatus] = useState('all');
+  const [fCat,    setFCat]    = useState('all');
+  const [sort,    setSort]    = useState({ key:'number', dir:1 });
+  const [cell,    setCell]    = useState(null);
+  const [val,     setVal]     = useState('');
+
+  const rows = projects
+    .filter(p => {
+      if (q && !`${p.title} ${p.number} ${p.supplier} ${p.owner} ${p.category}`.toLowerCase().includes(q.toLowerCase())) return false;
+      if (fStatus !== 'all' && p.status !== fStatus) return false;
+      if (fCat    !== 'all' && p.category !== fCat)  return false;
+      return true;
+    })
+    .sort((a,b) => {
+      let av = a[sort.key], bv = b[sort.key];
+      if (['savingsAmount','savingsPercent'].includes(sort.key)) { av=Number(av); bv=Number(bv); }
+      return av < bv ? -sort.dir : av > bv ? sort.dir : 0;
+    });
+
+  const startCell = (id,key,v) => { setCell({id,key}); setVal(String(v)); };
+  const commit    = () => {
+    if (!cell) return;
+    const patch = { [cell.key]: ['savingsAmount','savingsPercent'].includes(cell.key) ? Number(val)||0 : val };
+    onEdit(cell.id, patch);
+    setCell(null);
+  };
+  const sortBy = k => setSort(s => s.key===k ? {key:k,dir:-s.dir} : {key:k,dir:1});
+
+  const selSt = { padding:'7px 10px', border:'1px solid #E8EBF0', borderRadius:8, fontSize:12, color:'#374151', outline:'none', background:'#fff' };
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden' }}>
+      {/* Toolbar */}
+      <div style={{ padding:'14px 32px', borderBottom:'1px solid #E8EBF0', background:'#fff', display:'flex', gap:10, alignItems:'center', flexShrink:0 }}>
+        <div style={{ position:'relative' }}>
+          <svg style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#9CA3AF' }} width="13" height="13" fill="none" viewBox="0 0 15 15">
+            <path d="M6.5 11a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm3.89-.61 2.72 2.72" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search…"
+            style={{ ...selSt, paddingLeft:30, width:200 }} />
+        </div>
+        <select value={fStatus} onChange={e=>setFStatus(e.target.value)} style={selSt}>
+          <option value="all">All Statuses</option>
+          {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+        </select>
+        <select value={fCat} onChange={e=>setFCat(e.target.value)} style={selSt}>
+          <option value="all">All Categories</option>
+          {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+        </select>
+        <div style={{ flex:1 }} />
+        <span style={{ fontSize:11, color:'#B0B7C3' }}>{rows.length} project{rows.length!==1?'s':''}</span>
+        <button onClick={onAdd}
+          style={{ padding:'8px 18px', background:tweaks.accentColor, color:'#fff', border:'none', borderRadius:8, fontSize:12, fontWeight:700, letterSpacing:'0.02em' }}>
+          + New Project
+        </button>
+      </div>
+      {/* Table */}
+      <div style={{ flex:1, overflowY:'auto', overflowX:'auto' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+          <colgroup>
+            {COLS.map(c => <col key={c.key} style={{ width: c.flex ? undefined : c.w }} />)}
+            <col style={{ width:72 }} />
+          </colgroup>
+          <thead style={{ position:'sticky', top:0, zIndex:2 }}>
+            <tr style={{ background:'#F9FAFB' }}>
+              {COLS.map(c => (
+                <th key={c.key} onClick={()=>sortBy(c.key)}
+                  style={{ padding:'9px 14px', textAlign:c.align, fontWeight:700, color:'#9CA3AF', fontSize:10, textTransform:'uppercase', letterSpacing:'0.07em', cursor:'pointer', userSelect:'none', borderBottom:'2px solid #E8EBF0', whiteSpace:'nowrap' }}>
+                  {c.label}{sort.key===c.key ? (sort.dir===1?' ↑':' ↓') : ''}
+                </th>
+              ))}
+              <th style={{ borderBottom:'2px solid #E8EBF0' }} />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(p => (
+              <tr key={p.id} style={{ borderBottom:'1px solid #F3F4F6' }}
+                onMouseEnter={e=>e.currentTarget.style.background='#F9FBFF'}
+                onMouseLeave={e=>e.currentTarget.style.background=''}>
+                {COLS.map(c => {
+                  const isEd = cell?.id===p.id && cell?.key===c.key;
+                  let display;
+                  if (c.key==='status')         display = <Badge status={p.status} />;
+                  else if (c.key==='savingsAmount') display = <strong style={{ color:'#111827', fontWeight:700 }}>{fmtEur(p[c.key], tweaks.currency)}</strong>;
+                  else if (c.key==='savingsPercent') display = <span style={{ color:'#6B7280' }}>{fmtPct(p[c.key])}</span>;
+                  else display = <span style={{ color: c.key==='number' ? '#9CA3AF' : '#374151' }}>{p[c.key]}</span>;
+                  return (
+                    <td key={c.key} style={{ padding:'10px 14px', textAlign:c.align, whiteSpace: c.key==='title'?'normal':'nowrap' }}
+                      onDoubleClick={() => EDITABLE.includes(c.key) && startCell(p.id, c.key, p[c.key])}>
+                      {isEd ? (
+                        c.key==='status' ? (
+                          <select value={val} onChange={e=>setVal(e.target.value)} onBlur={commit} autoFocus
+                            style={{ fontSize:12, border:`1.5px solid ${tweaks.accentColor}`, borderRadius:6, padding:'2px 6px', outline:'none' }}>
+                            {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+                          </select>
+                        ) : c.key==='category' ? (
+                          <select value={val} onChange={e=>setVal(e.target.value)} onBlur={commit} autoFocus
+                            style={{ fontSize:12, border:`1.5px solid ${tweaks.accentColor}`, borderRadius:6, padding:'2px 6px', outline:'none' }}>
+                            {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+                          </select>
+                        ) : (
+                          <input value={val} onChange={e=>setVal(e.target.value)}
+                            onBlur={commit}
+                            onKeyDown={e=>{ if(e.key==='Enter') commit(); if(e.key==='Escape') setCell(null); }}
+                            autoFocus style={{ fontSize:12, border:`1.5px solid ${tweaks.accentColor}`, borderRadius:6, padding:'3px 7px', width:'100%', minWidth:80, outline:'none' }} />
+                        )
+                      ) : display}
+                    </td>
+                  );
+                })}
+                <td style={{ padding:'10px 14px', whiteSpace:'nowrap' }}>
+                  <button onClick={()=>onEdit(p.id)}
+                    title="Edit" style={{ background:'none', border:'none', color:'#CBD5E1', padding:'3px 5px', fontSize:13, lineHeight:1 }}
+                    onMouseEnter={e=>e.currentTarget.style.color='#374151'}
+                    onMouseLeave={e=>e.currentTarget.style.color='#CBD5E1'}>✏</button>
+                  <button onClick={()=>onDelete(p.id)}
+                    title="Delete" style={{ background:'none', border:'none', color:'#CBD5E1', padding:'3px 5px', fontSize:13, lineHeight:1 }}
+                    onMouseEnter={e=>e.currentTarget.style.color='#EF4444'}
+                    onMouseLeave={e=>e.currentTarget.style.color='#CBD5E1'}>✕</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {rows.length===0 && (
+          <div style={{ padding:60, textAlign:'center', color:'#B0B7C3', fontSize:13 }}>No projects match your filters</div>
+        )}
+      </div>
+      <div style={{ padding:'10px 32px', borderTop:'1px solid #E8EBF0', background:'#fff', fontSize:11, color:'#B0B7C3', flexShrink:0 }}>
+        Double-click any cell to edit inline
+      </div>
+    </div>
+  );
+}
+
+// ── Kanban ───────────────────────────────────────────────────
+function Kanban({ projects, onEdit, onAdd, tweaks, onStatusChange }) {
+  const cols = ['open','in_progress','completed'];
+  return (
+    <div style={{ flex:1, overflowX:'auto', padding:'24px 32px', display:'flex', gap:16, alignItems:'flex-start' }}>
+      {cols.map(status => {
+        const items = projects.filter(p => p.status===status);
+        const tot   = items.reduce((s,p) => s+Number(p.savingsAmount),0);
+        return (
+          <div key={status} style={{ flex:'0 0 310px', background:'#EAECF0', borderRadius:14, padding:'14px 14px 10px', minHeight:200 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:14, padding:'0 4px' }}>
+              <span style={{ width:9, height:9, borderRadius:'50%', background:STATUS_CLR[status], flexShrink:0 }} />
+              <span style={{ fontWeight:700, fontSize:12, color:'#374151', textTransform:'uppercase', letterSpacing:'0.05em' }}>{STATUS[status]}</span>
+              <span style={{ marginLeft:'auto', fontSize:11, color:'#9CA3AF', fontWeight:500 }}>{items.length}</span>
+              <span style={{ fontSize:11, fontWeight:700, color:STATUS_CLR[status] }}>{fmtEur(tot, tweaks.currency)}</span>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
+              {items.map(p => (
+                <div key={p.id} onClick={()=>onEdit(p.id)}
+                  style={{ background:'#fff', borderRadius:10, padding:'13px 15px', cursor:'pointer', border:'1px solid #E8EBF0', boxShadow:'0 1px 3px rgba(0,0,0,0.04)', transition:'box-shadow 0.15s, transform 0.15s' }}
+                  onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 6px 16px rgba(0,0,0,0.10)'; e.currentTarget.style.transform='translateY(-1px)';}}
+                  onMouseLeave={e=>{e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)'; e.currentTarget.style.transform='';}}>
+                  <div style={{ fontSize:10, color:'#B0B7C3', marginBottom:5, fontWeight:600, letterSpacing:'0.05em' }}>{p.number}</div>
+                  <div style={{ fontWeight:600, fontSize:12.5, color:'#111827', marginBottom:10, lineHeight:1.45, textWrap:'pretty' }}>{p.title}</div>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                    <span style={{ fontSize:17, fontWeight:800, color:tweaks.accentColor, letterSpacing:'-0.3px' }}>{fmtEur(p.savingsAmount, tweaks.currency)}</span>
+                    <span style={{ fontSize:11, color:'#6B7280', background:'#F1F5F9', padding:'2px 8px', borderRadius:10, fontWeight:500 }}>{fmtPct(p.savingsPercent)}</span>
+                  </div>
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'#9CA3AF', marginBottom:10 }}>
+                    <span>{p.owner}</span>
+                    {p.deadline && <span>Due {p.deadline}</span>}
+                  </div>
+                  <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                    {cols.filter(s=>s!==status).map(s => (
+                      <button key={s} onClick={e=>{e.stopPropagation(); onStatusChange(p.id, s);}}
+                        style={{ fontSize:10, padding:'2px 9px', border:`1px solid ${STATUS_CLR[s]}40`, borderRadius:20, background:STATUS_BG[s], color:STATUS_CLR[s], fontWeight:600, transition:'opacity 0.1s' }}
+                        onMouseEnter={e=>e.currentTarget.style.opacity='0.7'}
+                        onMouseLeave={e=>e.currentTarget.style.opacity='1'}>
+                        → {STATUS[s]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={onAdd}
+              style={{ width:'100%', marginTop:10, padding:'9px', border:'1.5px dashed #C5CBD6', borderRadius:9, background:'none', color:'#9CA3AF', fontSize:11, fontWeight:600, transition:'color 0.1s' }}
+              onMouseEnter={e=>{e.currentTarget.style.color='#374151'; e.currentTarget.style.borderColor='#94A3B8';}}
+              onMouseLeave={e=>{e.currentTarget.style.color='#9CA3AF'; e.currentTarget.style.borderColor='#C5CBD6';}}>
+              + Add project
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Project Modal ────────────────────────────────────────────
+const EMPTY_FORM = { number:'', title:'', owner:'', category:'Raw Materials', supplier:'', savingsAmount:'', savingsPercent:'', status:'open', startDate:'', deadline:'', measureType:'Negotiation', comments:'' };
+
+function ProjectModal({ project, projects, onSave, onClose, tweaks }) {
+  const isNew = !project?.id;
+  const [form, setForm] = useState(project ? {...project} : { ...EMPTY_FORM, number: nextNum(projects) });
+  const set = (k,v) => setForm(f => ({...f, [k]:v}));
+  const [err, setErr] = useState('');
+
+  const iStyle = { padding:'8px 11px', border:'1px solid #E8EBF0', borderRadius:9, fontSize:13, outline:'none', fontFamily:'inherit', width:'100%', color:'#111827', transition:'border-color 0.15s' };
+  const lStyle = { fontSize:10, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:5, display:'block' };
+
+  const save = () => {
+    if (!form.title.trim()) { setErr('Project title is required.'); return; }
+    onSave({ ...form, id: form.id || genId(), savingsAmount: Number(form.savingsAmount)||0, savingsPercent: Number(form.savingsPercent)||0 });
+  };
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(15,20,35,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:100, backdropFilter:'blur(6px)' }} onClick={onClose}>
+      <div style={{ background:'#fff', borderRadius:18, width:640, maxHeight:'92vh', overflowY:'auto', padding:'32px', boxShadow:'0 24px 70px rgba(0,0,0,0.22)' }} onClick={e=>e.stopPropagation()}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:26 }}>
+          <div>
+            <div style={{ fontWeight:800, fontSize:17, color:'#111827' }}>{isNew ? 'New Saving Project' : 'Edit Project'}</div>
+            <div style={{ fontSize:11, color:'#9CA3AF', marginTop:3, fontFamily:'monospace', letterSpacing:'0.05em' }}>{form.number}</div>
+          </div>
+          <button onClick={onClose} style={{ background:'#F1F5F9', border:'none', color:'#374151', width:30, height:30, borderRadius:8, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>×</button>
+        </div>
+        {err && <div style={{ background:'#FEF2F2', color:'#DC2626', padding:'8px 12px', borderRadius:8, fontSize:12, marginBottom:14 }}>{err}</div>}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+          <div style={{ gridColumn:'1 / -1' }}>
+            <label style={lStyle}>Project Title *</label>
+            <input value={form.title} onChange={e=>set('title',e.target.value)} style={iStyle} placeholder="e.g. Steel Renegotiation Q2 2026"
+              onFocus={e=>e.target.style.borderColor=tweaks.accentColor} onBlur={e=>e.target.style.borderColor='#E8EBF0'} />
+          </div>
+          <div>
+            <label style={lStyle}>Owner</label>
+            <input value={form.owner} onChange={e=>set('owner',e.target.value)} style={iStyle}
+              onFocus={e=>e.target.style.borderColor=tweaks.accentColor} onBlur={e=>e.target.style.borderColor='#E8EBF0'} />
+          </div>
+          <div>
+            <label style={lStyle}>Status</label>
+            <select value={form.status} onChange={e=>set('status',e.target.value)} style={iStyle}>
+              {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={lStyle}>Category / Commodity Group</label>
+            <select value={form.category} onChange={e=>set('category',e.target.value)} style={iStyle}>
+              {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={lStyle}>Supplier</label>
+            <input value={form.supplier} onChange={e=>set('supplier',e.target.value)} style={iStyle}
+              onFocus={e=>e.target.style.borderColor=tweaks.accentColor} onBlur={e=>e.target.style.borderColor='#E8EBF0'} />
+          </div>
+          <div>
+            <label style={lStyle}>Savings Amount ({tweaks.currency})</label>
+            <input type="number" value={form.savingsAmount} onChange={e=>set('savingsAmount',e.target.value)} style={iStyle}
+              onFocus={e=>e.target.style.borderColor=tweaks.accentColor} onBlur={e=>e.target.style.borderColor='#E8EBF0'} />
+          </div>
+          <div>
+            <label style={lStyle}>Savings %</label>
+            <input type="number" step="0.1" value={form.savingsPercent} onChange={e=>set('savingsPercent',e.target.value)} style={iStyle}
+              onFocus={e=>e.target.style.borderColor=tweaks.accentColor} onBlur={e=>e.target.style.borderColor='#E8EBF0'} />
+          </div>
+          <div>
+            <label style={lStyle}>Measure Type</label>
+            <select value={form.measureType} onChange={e=>set('measureType',e.target.value)} style={iStyle}>
+              {MEASURE_TYPES.map(m=><option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={lStyle}>Start Date</label>
+            <input type="date" value={form.startDate} onChange={e=>set('startDate',e.target.value)} style={iStyle} />
+          </div>
+          <div>
+            <label style={lStyle}>Deadline</label>
+            <input type="date" value={form.deadline} onChange={e=>set('deadline',e.target.value)} style={iStyle} />
+          </div>
+          <div style={{ gridColumn:'1 / -1' }}>
+            <label style={lStyle}>Comments</label>
+            <textarea value={form.comments} onChange={e=>set('comments',e.target.value)} style={{ ...iStyle, minHeight:80, resize:'vertical', lineHeight:1.5 }}
+              onFocus={e=>e.target.style.borderColor=tweaks.accentColor} onBlur={e=>e.target.style.borderColor='#E8EBF0'} />
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:26, paddingTop:22, borderTop:'1px solid #F3F4F6' }}>
+          <button onClick={onClose} style={{ padding:'9px 20px', border:'1px solid #E8EBF0', borderRadius:9, background:'#fff', fontSize:12, fontWeight:600, color:'#374151' }}>Cancel</button>
+          <button onClick={save} style={{ padding:'9px 22px', background:tweaks.accentColor, color:'#fff', border:'none', borderRadius:9, fontSize:12, fontWeight:700, letterSpacing:'0.02em' }}>
+            {isNew ? 'Create Project' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Battleplan Components ────────────────────────────────────
+function PCBadge({ status }) {
+  return (
+    <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:600, background:PC_STATUS_BG[status], color:PC_STATUS_CLR[status] }}>
+      <span style={{ width:6, height:6, borderRadius:'50%', background:PC_STATUS_CLR[status], flexShrink:0 }} />
+      {PC_STATUS[status]}
+    </span>
+  );
+}
+
+function SupplierModal({ supplier, suppliers, onSave, onClose, tweaks }) {
+  const isNew = !supplier?.id;
+  const [form, setForm] = useState(supplier || { number:`SUP-${String(suppliers.length+1).padStart(3,'0')}`, name:'', commodity:'Raw Materials', volume:'' });
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+  const iStyle = { padding:'8px 11px', border:'1px solid #E8EBF0', borderRadius:9, fontSize:13, outline:'none', fontFamily:'inherit', width:'100%', color:'#111827' };
+  const lStyle = { fontSize:10, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:5, display:'block' };
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(15,20,35,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:100, backdropFilter:'blur(6px)' }} onClick={onClose}>
+      <div style={{ background:'#fff', borderRadius:18, width:480, padding:32, boxShadow:'0 24px 70px rgba(0,0,0,0.22)' }} onClick={e=>e.stopPropagation()}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
+          <div style={{ fontWeight:800, fontSize:17, color:'#111827' }}>{isNew ? 'New Supplier' : 'Edit Supplier'}</div>
+          <button onClick={onClose} style={{ background:'#F1F5F9', border:'none', color:'#374151', width:30, height:30, borderRadius:8, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+          <div>
+            <label style={lStyle}>Supplier No.</label>
+            <input value={form.number} onChange={e=>set('number',e.target.value)} style={iStyle} />
+          </div>
+          <div>
+            <label style={lStyle}>Commodity</label>
+            <select value={form.commodity} onChange={e=>set('commodity',e.target.value)} style={iStyle}>
+              {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={lStyle}>Supplier Name</label>
+            <input value={form.name} onChange={e=>set('name',e.target.value)} style={iStyle} placeholder="e.g. ThyssenKrupp AG"
+              onFocus={e=>e.target.style.borderColor=tweaks.accentColor} onBlur={e=>e.target.style.borderColor='#E8EBF0'} />
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={lStyle}>Purchase Volume FY{new Date().getFullYear()} ({tweaks.currency})</label>
+            <input type="number" value={form.volume} onChange={e=>set('volume',e.target.value)} style={iStyle}
+              onFocus={e=>e.target.style.borderColor=tweaks.accentColor} onBlur={e=>e.target.style.borderColor='#E8EBF0'} />
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:24, paddingTop:20, borderTop:'1px solid #F3F4F6' }}>
+          <button onClick={onClose} style={{ padding:'9px 20px', border:'1px solid #E8EBF0', borderRadius:9, background:'#fff', fontSize:12, fontWeight:600, color:'#374151' }}>Cancel</button>
+          <button onClick={() => { if(form.name) onSave({...form, id:form.id||genId(), volume:Number(form.volume)||0}); }}
+            style={{ padding:'9px 22px', background:tweaks.accentColor, color:'#fff', border:'none', borderRadius:9, fontSize:12, fontWeight:700 }}>
+            {isNew ? 'Add Supplier' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PriceChangeModal({ pc, supplierId, suppliers, onSave, onClose, tweaks }) {
+  const isNew = !pc?.id;
+  const [form, setForm] = useState(pc ? {...pc} : { supplierId, percent:'', startDate:'', endDate:'', status:'started' });
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+  const iStyle = { padding:'8px 11px', border:'1px solid #E8EBF0', borderRadius:9, fontSize:13, outline:'none', fontFamily:'inherit', width:'100%', color:'#111827' };
+  const lStyle = { fontSize:10, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:5, display:'block' };
+  const sup = suppliers.find(s=>s.id===form.supplierId);
+  const impact = sup && form.percent ? Number(sup.volume)*Number(form.percent)/100 : null;
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(15,20,35,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200, backdropFilter:'blur(6px)' }} onClick={onClose}>
+      <div style={{ background:'#fff', borderRadius:18, width:480, padding:32, boxShadow:'0 24px 70px rgba(0,0,0,0.22)' }} onClick={e=>e.stopPropagation()}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
+          <div>
+            <div style={{ fontWeight:800, fontSize:17, color:'#111827' }}>{isNew ? 'New Price Change' : 'Edit Price Change'}</div>
+            {sup && <div style={{ fontSize:11, color:'#9CA3AF', marginTop:2 }}>{sup.name}</div>}
+          </div>
+          <button onClick={onClose} style={{ background:'#F1F5F9', border:'none', color:'#374151', width:30, height:30, borderRadius:8, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={lStyle}>Price Increase (%)</label>
+            <input type="number" step="0.1" value={form.percent} onChange={e=>set('percent',e.target.value)} style={iStyle} placeholder="e.g. 5.5"
+              onFocus={e=>e.target.style.borderColor=tweaks.accentColor} onBlur={e=>e.target.style.borderColor='#E8EBF0'} />
+            {impact !== null && (
+              <div style={{ fontSize:11, color:'#6B7280', marginTop:6, padding:'6px 10px', background:'#FEF2F2', borderRadius:6 }}>
+                Exposure: <strong style={{ color:'#EF4444' }}>+{fmtEur(impact, tweaks.currency)}</strong> on {fmtEur(Number(sup.volume), tweaks.currency)} volume
+              </div>
+            )}
+          </div>
+          <div>
+            <label style={lStyle}>Start Date</label>
+            <input type="date" value={form.startDate} onChange={e=>set('startDate',e.target.value)} style={iStyle} />
+          </div>
+          <div>
+            <label style={lStyle}>End Date</label>
+            <input type="date" value={form.endDate} onChange={e=>set('endDate',e.target.value)} style={iStyle} />
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={lStyle}>Status</label>
+            <select value={form.status} onChange={e=>set('status',e.target.value)} style={iStyle}>
+              {Object.entries(PC_STATUS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:24, paddingTop:20, borderTop:'1px solid #F3F4F6' }}>
+          <button onClick={onClose} style={{ padding:'9px 20px', border:'1px solid #E8EBF0', borderRadius:9, background:'#fff', fontSize:12, fontWeight:600, color:'#374151' }}>Cancel</button>
+          <button onClick={() => { if(form.percent) onSave({...form, id:form.id||genId(), percent:Number(form.percent)||0}); }}
+            style={{ padding:'9px 22px', background:tweaks.accentColor, color:'#fff', border:'none', borderRadius:9, fontSize:12, fontWeight:700 }}>
+            {isNew ? 'Add Price Change' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BattleplanView({ suppliers, setSuppliers, priceChanges, setPriceChanges, tweaks }) {
+  const [expanded,  setExpanded]  = useState(null);
+  const [supModal,  setSupModal]  = useState(null);
+  const [pcModal,   setPcModal]   = useState(null);
+  const [search,    setSearch]    = useState('');
+  const [filterCom, setFilterCom] = useState('all');
+
+  const totalVolume   = suppliers.reduce((s,sup)=>s+Number(sup.volume),0);
+  const allImpacts    = priceChanges.map(pc => { const sup=suppliers.find(s=>s.id===pc.supplierId); return {...pc, impact: sup?Number(sup.volume)*Number(pc.percent)/100:0}; });
+  const totalExposure = allImpacts.reduce((s,pc)=>s+pc.impact,0);
+  const agreedImpact  = allImpacts.filter(pc=>pc.status==='agreement_done').reduce((s,pc)=>s+pc.impact,0);
+  const openCount     = priceChanges.filter(pc=>pc.status!=='agreement_done').length;
+
+  const filtered = suppliers.filter(s => {
+    if (search && !`${s.name} ${s.number} ${s.commodity}`.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterCom !== 'all' && s.commodity !== filterCom) return false;
+    return true;
+  });
+
+  const saveSup  = sup => { setSuppliers(ss => sup.id&&ss.some(s=>s.id===sup.id)?ss.map(s=>s.id===sup.id?sup:s):[...ss,sup]); setSupModal(null); };
+  const deleteSup = id => { if(window.confirm('Delete this supplier and all their price changes?')){ setSuppliers(ss=>ss.filter(s=>s.id!==id)); setPriceChanges(ps=>ps.filter(p=>p.supplierId!==id)); }};
+  const savePC   = pc => { setPriceChanges(ps => pc.id&&ps.some(p=>p.id===pc.id)?ps.map(p=>p.id===pc.id?pc:p):[...ps,pc]); setPcModal(null); };
+  const deletePC  = id => { if(window.confirm('Delete this price change?')) setPriceChanges(ps=>ps.filter(p=>p.id!==id)); };
+
+  const selSt = { padding:'7px 10px', border:'1px solid #E8EBF0', borderRadius:8, fontSize:12, color:'#374151', outline:'none', background:'#fff' };
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden' }}>
+      {/* KPI Strip */}
+      <div style={{ padding:'20px 32px 16px', background:'#F4F6FA', flexShrink:0, display:'flex', gap:12 }}>
+        {[
+          { label:'Total Purchase Volume',       val: fmtEur(totalVolume,tweaks.currency),   color:'#111827',  sub:`${suppliers.length} suppliers`          },
+          { label:'Total Price Increase Exposure',val: '+'+fmtEur(totalExposure,tweaks.currency), color:'#EF4444', sub:'sum of all price changes'           },
+          { label:'Agreed / Settled',            val: fmtEur(agreedImpact,tweaks.currency),  color:'#22C55E',  sub:'agreement done'                         },
+          { label:'Open Negotiations',           val: String(openCount),                      color:'#F59E0B',  sub:'items pending closure'                  },
+        ].map(k=>(
+          <div key={k.label} style={{ background:'#fff', borderRadius:12, padding:'16px 20px', border:'1px solid #E8EBF0', flex:1 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:5 }}>{k.label}</div>
+            <div style={{ fontSize:22, fontWeight:800, color:k.color, letterSpacing:'-0.5px', lineHeight:1 }}>{k.val}</div>
+            <div style={{ fontSize:10, color:'#B0B7C3', marginTop:4 }}>{k.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div style={{ padding:'12px 32px', borderBottom:'1px solid #E8EBF0', background:'#fff', display:'flex', gap:10, alignItems:'center', flexShrink:0 }}>
+        <div style={{ position:'relative' }}>
+          <svg style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#9CA3AF' }} width="13" height="13" fill="none" viewBox="0 0 15 15">
+            <path d="M6.5 11a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm3.89-.61 2.72 2.72" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search suppliers…"
+            style={{ ...selSt, paddingLeft:30, width:210 }} />
+        </div>
+        <select value={filterCom} onChange={e=>setFilterCom(e.target.value)} style={selSt}>
+          <option value="all">All Commodities</option>
+          {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+        </select>
+        <div style={{ flex:1 }} />
+        <span style={{ fontSize:11, color:'#B0B7C3' }}>{filtered.length} supplier{filtered.length!==1?'s':''}</span>
+        <button onClick={()=>setSupModal('new')}
+          style={{ padding:'8px 18px', background:tweaks.accentColor, color:'#fff', border:'none', borderRadius:8, fontSize:12, fontWeight:700, letterSpacing:'0.02em' }}>
+          + Add Supplier
+        </button>
+      </div>
+
+      {/* Table */}
+      <div style={{ flex:1, overflowY:'auto' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+          <thead style={{ position:'sticky', top:0, zIndex:2 }}>
+            <tr style={{ background:'#F9FAFB' }}>
+              {['','No.','Supplier Name','Commodity','Purchase Volume','Price Changes','Total Exposure',''].map((h,i)=>(
+                <th key={i} style={{ padding:'9px 14px', textAlign:i>=4&&i<7?'right':'left', fontWeight:700, color:'#9CA3AF', fontSize:10, textTransform:'uppercase', letterSpacing:'0.07em', borderBottom:'2px solid #E8EBF0', whiteSpace:'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(sup => {
+              const pcs      = priceChanges.filter(p=>p.supplierId===sup.id);
+              const exposure = pcs.reduce((s,pc)=>s+Number(sup.volume)*Number(pc.percent)/100,0);
+              const isOpen   = expanded===sup.id;
+              return (
+                <React.Fragment key={sup.id}>
+                  <tr style={{ borderBottom: isOpen?'none':'1px solid #F3F4F6', background:isOpen?'#F7FAFF':'' }}
+                    onMouseEnter={e=>{ if(!isOpen) e.currentTarget.style.background='#F9FBFF'; }}
+                    onMouseLeave={e=>{ if(!isOpen) e.currentTarget.style.background=''; }}>
+                    <td style={{ padding:'11px 14px', width:36 }}>
+                      <button onClick={()=>setExpanded(isOpen?null:sup.id)}
+                        style={{ background:isOpen?tweaks.accentColor+'22':'#F1F5F9', border:'none', color:isOpen?tweaks.accentColor:'#6B7280', width:22, height:22, borderRadius:5, fontSize:9, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'all 0.12s' }}>
+                        {isOpen ? '▲' : '▼'}
+                      </button>
+                    </td>
+                    <td style={{ padding:'11px 14px', color:'#9CA3AF', fontWeight:600, fontFamily:'monospace', fontSize:11 }}>{sup.number}</td>
+                    <td style={{ padding:'11px 14px', fontWeight:700, color:'#111827' }}>{sup.name}</td>
+                    <td style={{ padding:'11px 14px' }}>
+                      <span style={{ background:'#F1F5F9', color:'#6B7280', padding:'2px 8px', borderRadius:10, fontSize:11, fontWeight:500 }}>{sup.commodity}</span>
+                    </td>
+                    <td style={{ padding:'11px 14px', textAlign:'right', fontWeight:700, color:'#111827' }}>{fmtEur(sup.volume, tweaks.currency)}</td>
+                    <td style={{ padding:'11px 14px', textAlign:'right' }}>
+                      {pcs.length>0
+                        ? <span style={{ background:tweaks.accentColor+'18', color:tweaks.accentColor, padding:'2px 10px', borderRadius:10, fontSize:11, fontWeight:700 }}>{pcs.length}</span>
+                        : <span style={{ color:'#D1D5DB', fontSize:11 }}>—</span>}
+                    </td>
+                    <td style={{ padding:'11px 14px', textAlign:'right', fontWeight:700, color:exposure>0?'#EF4444':'#9CA3AF' }}>
+                      {exposure>0 ? `+${fmtEur(exposure,tweaks.currency)}` : '—'}
+                    </td>
+                    <td style={{ padding:'11px 14px', whiteSpace:'nowrap' }}>
+                      <button onClick={()=>setSupModal(sup)} title="Edit" style={{ background:'none', border:'none', color:'#CBD5E1', padding:'3px 5px', fontSize:13, cursor:'pointer' }}
+                        onMouseEnter={e=>e.currentTarget.style.color='#374151'} onMouseLeave={e=>e.currentTarget.style.color='#CBD5E1'}>✏</button>
+                      <button onClick={()=>deleteSup(sup.id)} title="Delete" style={{ background:'none', border:'none', color:'#CBD5E1', padding:'3px 5px', fontSize:13, cursor:'pointer' }}
+                        onMouseEnter={e=>e.currentTarget.style.color='#EF4444'} onMouseLeave={e=>e.currentTarget.style.color='#CBD5E1'}>✕</button>
+                    </td>
+                  </tr>
+                  {isOpen && (
+                    <tr>
+                      <td colSpan={8} style={{ background:'#F7FAFF', borderBottom:'2px solid #E0E7FF', padding:'0 16px 16px 50px' }}>
+                        <div style={{ background:'#fff', borderRadius:10, border:'1px solid #E8EBF0', overflow:'hidden' }}>
+                          <div style={{ padding:'12px 16px', borderBottom:'1px solid #F3F4F6', display:'flex', alignItems:'center', justifyContent:'space-between', background:'#FAFBFF' }}>
+                            <span style={{ fontSize:11, fontWeight:700, color:'#374151', letterSpacing:'0.04em' }}>
+                              Price Changes · <span style={{ color:'#6B7280', fontWeight:500 }}>{sup.name}</span>
+                            </span>
+                            <button onClick={()=>setPcModal({supplierId:sup.id})}
+                              style={{ padding:'5px 14px', background:tweaks.accentColor, color:'#fff', border:'none', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>
+                              + Add Price Change
+                            </button>
+                          </div>
+                          {pcs.length===0 ? (
+                            <div style={{ padding:'24px', textAlign:'center', color:'#B0B7C3', fontSize:12 }}>
+                              No price changes recorded yet. Click "+ Add Price Change" to start tracking.
+                            </div>
+                          ) : (
+                            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                              <thead>
+                                <tr style={{ background:'#F9FAFB' }}>
+                                  {['Increase','Start Date','End Date','Status','Exposure (€)',''].map(h=>(
+                                    <th key={h} style={{ padding:'8px 14px', textAlign:h==='Increase'||h==='Exposure (€)'?'right':'left', fontSize:10, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.06em', borderBottom:'1px solid #F3F4F6' }}>{h}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {pcs.map(pc => {
+                                  const impact = Number(sup.volume)*Number(pc.percent)/100;
+                                  return (
+                                    <tr key={pc.id} style={{ borderBottom:'1px solid #F9FAFB' }}>
+                                      <td style={{ padding:'10px 14px', textAlign:'right', fontWeight:800, color:'#EF4444', fontSize:15 }}>+{Number(pc.percent).toFixed(1)}%</td>
+                                      <td style={{ padding:'10px 14px', color:'#374151' }}>{pc.startDate || '—'}</td>
+                                      <td style={{ padding:'10px 14px', color:'#374151' }}>{pc.endDate   || '—'}</td>
+                                      <td style={{ padding:'10px 14px' }}><PCBadge status={pc.status} /></td>
+                                      <td style={{ padding:'10px 14px', textAlign:'right', fontWeight:700, color:'#EF4444' }}>+{fmtEur(impact,tweaks.currency)}</td>
+                                      <td style={{ padding:'10px 14px', whiteSpace:'nowrap' }}>
+                                        <button onClick={()=>setPcModal({supplierId:sup.id, pc})} style={{ background:'none', border:'none', color:'#CBD5E1', padding:'2px 4px', fontSize:12, cursor:'pointer' }}
+                                          onMouseEnter={e=>e.currentTarget.style.color='#374151'} onMouseLeave={e=>e.currentTarget.style.color='#CBD5E1'}>✏</button>
+                                        <button onClick={()=>deletePC(pc.id)} style={{ background:'none', border:'none', color:'#CBD5E1', padding:'2px 4px', fontSize:12, cursor:'pointer' }}
+                                          onMouseEnter={e=>e.currentTarget.style.color='#EF4444'} onMouseLeave={e=>e.currentTarget.style.color='#CBD5E1'}>✕</button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+        {filtered.length===0 && <div style={{ padding:60, textAlign:'center', color:'#B0B7C3', fontSize:13 }}>No suppliers found</div>}
+      </div>
+
+      {supModal && <SupplierModal supplier={supModal==='new'?null:supModal} suppliers={suppliers} onSave={saveSup} onClose={()=>setSupModal(null)} tweaks={tweaks} />}
+      {pcModal  && <PriceChangeModal pc={pcModal.pc} supplierId={pcModal.supplierId} suppliers={suppliers} onSave={savePC} onClose={()=>setPcModal(null)} tweaks={tweaks} />}
+    </div>
+  );
+}
+
+// ── Tweaks Panel ─────────────────────────────────────────────
+function TweaksPanel({ tweaks, setTweaks, visible }) {
+  if (!visible) return null;
+  const lStyle = { fontSize:10, fontWeight:700, color:'#6B7280', textTransform:'uppercase', letterSpacing:'0.07em', display:'block', marginBottom:5 };
+  const iStyle = { width:'100%', padding:'7px 10px', border:'1px solid #E8EBF0', borderRadius:8, fontSize:12, outline:'none', fontFamily:'inherit' };
+  return (
+    <div style={{ position:'fixed', bottom:24, right:24, background:'#fff', borderRadius:14, padding:'20px 22px', border:'1px solid #E8EBF0', boxShadow:'0 8px 32px rgba(0,0,0,0.12)', zIndex:300, width:250 }}>
+      <div style={{ fontWeight:800, fontSize:12, color:'#111827', marginBottom:16, letterSpacing:'0.02em' }}>Tweaks</div>
+      <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+        <div>
+          <label style={lStyle}>Annual Savings Target</label>
+          <input type="number" value={tweaks.annualTarget} onChange={e=>setTweaks(t=>({...t,annualTarget:Number(e.target.value)}))} style={iStyle} />
+        </div>
+        <div>
+          <label style={lStyle}>Accent Color</label>
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <input type="color" value={tweaks.accentColor} onChange={e=>setTweaks(t=>({...t,accentColor:e.target.value}))}
+              style={{ width:34, height:34, borderRadius:7, cursor:'pointer', padding:2, border:'1px solid #E8EBF0', background:'none' }} />
+            <input value={tweaks.accentColor} onChange={e=>setTweaks(t=>({...t,accentColor:e.target.value}))}
+              style={{ ...iStyle, fontFamily:'monospace', fontSize:11 }} />
+          </div>
+        </div>
+        <div>
+          <label style={lStyle}>Currency Symbol</label>
+          <input value={tweaks.currency} onChange={e=>setTweaks(t=>({...t,currency:e.target.value}))} style={iStyle} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── App ──────────────────────────────────────────────────────
+function App() {
+  const [projects,      setProjects]      = useState(() => { try { const s=localStorage.getItem('sp_p'); return s?JSON.parse(s):SAMPLE_DATA; } catch { return SAMPLE_DATA; } });
+  const [suppliers,     setSuppliers]     = useState(() => { try { const s=localStorage.getItem('sp_sup'); return s?JSON.parse(s):SAMPLE_SUPPLIERS; } catch { return SAMPLE_SUPPLIERS; } });
+  const [priceChanges,  setPriceChanges]  = useState(() => { try { const s=localStorage.getItem('sp_pc');  return s?JSON.parse(s):SAMPLE_PC; } catch { return SAMPLE_PC; } });
+  const [view,          setView]          = useState(() => localStorage.getItem('sp_v') || 'dashboard');
+  const [tweaks,        setTweaks]        = useState(() => { try { const s=localStorage.getItem('sp_t'); return s?{...TWEAK_DEFAULTS,...JSON.parse(s)}:TWEAK_DEFAULTS; } catch { return TWEAK_DEFAULTS; } });
+  const [modal,         setModal]         = useState(null);
+  const [tweaksVisible, setTweaksVisible] = useState(false);
+
+  useEffect(() => { localStorage.setItem('sp_p',   JSON.stringify(projects));     }, [projects]);
+  useEffect(() => { localStorage.setItem('sp_sup', JSON.stringify(suppliers));    }, [suppliers]);
+  useEffect(() => { localStorage.setItem('sp_pc',  JSON.stringify(priceChanges)); }, [priceChanges]);
+  useEffect(() => { localStorage.setItem('sp_v', view); }, [view]);
+  useEffect(() => {
+    localStorage.setItem('sp_t', JSON.stringify(tweaks));
+    window.parent.postMessage({ type:'__edit_mode_set_keys', edits: tweaks }, '*');
+  }, [tweaks]);
+
+  useEffect(() => {
+    const handler = e => {
+      if (e.data?.type === '__activate_edit_mode')   setTweaksVisible(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksVisible(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type:'__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const handleEdit = (id, patch) => {
+    if (patch) { setProjects(ps => ps.map(p => p.id===id ? {...p,...patch} : p)); }
+    else       { const p = projects.find(x=>x.id===id); if (p) setModal(p); }
+  };
+  const handleSave = form => {
+    setProjects(ps => form.id && ps.some(p=>p.id===form.id) ? ps.map(p=>p.id===form.id?form:p) : [...ps, form]);
+    setModal(null);
+  };
+  const handleDelete = id => { if (window.confirm('Delete this project?')) setProjects(ps=>ps.filter(p=>p.id!==id)); };
+  const handleStatusChange = (id, status) => setProjects(ps=>ps.map(p=>p.id===id?{...p,status}:p));
+
+  return (
+    <div style={{ display:'flex', height:'100vh', fontFamily:"'DM Sans', sans-serif", background:'#F4F6FA' }}>
+      {/* Sidebar */}
+      <div style={{ width:210, background:'#18202F', display:'flex', flexDirection:'column', flexShrink:0 }}>
+        <div style={{ padding:'22px 18px 18px', borderBottom:'1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ fontSize:13, fontWeight:800, color:'#fff', letterSpacing:'0.02em', lineHeight:1.3 }}>Saving Projects</div>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,0.35)', marginTop:3, fontWeight:500, letterSpacing:'0.05em' }}>PURCHASING · {new Date().getFullYear()}</div>
+        </div>
+        <nav style={{ padding:'10px 10px', flex:1 }}>
+          {NAV.map(v => (
+            <button key={v.key} onClick={()=>setView(v.key)} style={{
+              display:'flex', alignItems:'center', gap:10, width:'100%', padding:'9px 11px', borderRadius:9, marginBottom:2,
+              background: view===v.key ? 'rgba(255,255,255,0.11)' : 'none',
+              border:'none', color: view===v.key ? '#fff' : 'rgba(255,255,255,0.42)',
+              fontSize:13, fontWeight: view===v.key ? 700 : 400, cursor:'pointer', textAlign:'left', transition:'all 0.12s'
+            }}
+              onMouseEnter={e=>{ if(view!==v.key) e.currentTarget.style.background='rgba(255,255,255,0.06)'; }}
+              onMouseLeave={e=>{ if(view!==v.key) e.currentTarget.style.background='none'; }}>
+              <span style={{ opacity: view===v.key ? 1 : 0.6 }}>{v.svg}</span>
+              {v.label}
+            </button>
+          ))}
+        </nav>
+        <div style={{ padding:'14px 18px', borderTop:'1px solid rgba(255,255,255,0.07)', fontSize:10, color:'rgba(255,255,255,0.2)', fontWeight:500, letterSpacing:'0.05em' }}>
+          {projects.length} PROJECTS · {fmtEur(projects.reduce((s,p)=>s+Number(p.savingsAmount),0), tweaks.currency)} TOTAL
+        </div>
+      </div>
+
+      {/* Main */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+        <div style={{ padding:'14px 32px', borderBottom:'1px solid #E8EBF0', background:'#fff', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+          <h1 style={{ fontSize:16, fontWeight:800, color:'#111827', letterSpacing:'-0.3px' }}>
+            {NAV.find(v=>v.key===view)?.label}
+          </h1>
+          <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+            {view !== 'dashboard' && view !== 'battleplan' && (
+              <button onClick={()=>setModal('new')}
+                style={{ padding:'7px 16px', background:tweaks.accentColor, color:'#fff', border:'none', borderRadius:8, fontSize:11, fontWeight:700, letterSpacing:'0.03em' }}>
+                + New Project
+              </button>
+            )}
+            <div style={{ fontSize:11, color:'#B0B7C3', fontWeight:500 }}>FY {new Date().getFullYear()}</div>
+          </div>
+        </div>
+        <div style={{ flex:1, overflow:'hidden', display:'flex', flexDirection:'column' }}>
+          {view==='dashboard' && <Dashboard projects={projects} tweaks={tweaks} />}
+          {view==='list'      && <ListView  projects={projects} onEdit={handleEdit} onDelete={handleDelete} onAdd={()=>setModal('new')} tweaks={tweaks} />}
+          {view==='kanban'    && <Kanban    projects={projects} onEdit={handleEdit} onDelete={handleDelete} onAdd={()=>setModal('new')} tweaks={tweaks} onStatusChange={handleStatusChange} />}
+          {view==='battleplan'&& <BattleplanView suppliers={suppliers} setSuppliers={setSuppliers} priceChanges={priceChanges} setPriceChanges={setPriceChanges} tweaks={tweaks} />}
+        </div>
+      </div>
+
+      {modal && <ProjectModal project={modal==='new'?null:modal} projects={projects} onSave={handleSave} onClose={()=>setModal(null)} tweaks={tweaks} />}
+      <TweaksPanel tweaks={tweaks} setTweaks={setTweaks} visible={tweaksVisible} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
