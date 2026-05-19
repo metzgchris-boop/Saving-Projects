@@ -68,11 +68,12 @@
 const { useState, useEffect, useRef } = React;
 
 // ── Constants ────────────────────────────────────────────────
-const STATUS       = { open: 'Open', in_progress: 'In Progress', completed: 'Completed' };
-const STATUS_CLR   = { open: '#94A3B8', in_progress: '#F59E0B', completed: '#22C55E' };
-const STATUS_BG    = { open: '#F1F5F9', in_progress: '#FFFBEB', completed: '#F0FDF4' };
+const STATUS       = { idea: 'Idea', open: 'Open', in_progress: 'In Progress', completed: 'Completed' };
+const STATUS_CLR   = { idea: '#A855F7', open: '#94A3B8', in_progress: '#F59E0B', completed: '#22C55E' };
+const STATUS_BG    = { idea: '#FAF5FF', open: '#F1F5F9', in_progress: '#FFFBEB', completed: '#F0FDF4' };
 const MEASURE_TYPES = ['Negotiation', 'Substitution', 'Volume Optimization', 'Process Optimization', 'Specification Change', 'Other'];
-const CATEGORIES   = ['Raw Materials', 'Packaging', 'Logistics', 'IT & Electronics', 'MRO & Office', 'Services', 'Other'];
+const CATEGORIES   = ['Metals', 'Powertrain', 'Chemicals', 'Electricals', 'Indirect', 'Service & Solutions'];
+const BUSINESS_UNITS = ['Asphalt', 'Milling & Recycling', 'Soil & Waste', 'Light Equipment', 'Pure Commercial'];
 const NAV = [
   { key: 'dashboard',  label: 'Dashboard',  svg: <svg width="15" height="15" fill="none" viewBox="0 0 15 15"><rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="1" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/></svg> },
   { key: 'list',       label: 'Projects',   svg: <svg width="15" height="15" fill="none" viewBox="0 0 15 15"><rect x="1" y="2" width="13" height="1.5" rx=".75" fill="currentColor"/><rect x="1" y="6.75" width="13" height="1.5" rx=".75" fill="currentColor"/><rect x="1" y="11.5" width="13" height="1.5" rx=".75" fill="currentColor"/></svg> },
@@ -86,38 +87,65 @@ const PC_STATUS_CLR = { started: '#F59E0B', in_negotiation: '#3D6FE8', agreement
 const PC_STATUS_BG  = { started: '#FFFBEB', in_negotiation: '#EEF4FF', agreement_done: '#F0FDF4' };
 
 const SAMPLE_SUPPLIERS = [
-  { id:'s1', number:'SUP-001', name:'ThyssenKrupp AG',       commodity:'Raw Materials',    volume:1200000 },
-  { id:'s2', number:'SUP-002', name:'DS Smith GmbH',         commodity:'Packaging',        volume:380000  },
-  { id:'s3', number:'SUP-003', name:'DHL Supply Chain',      commodity:'Logistics',        volume:950000  },
-  { id:'s4', number:'SUP-004', name:'Dell Technologies',     commodity:'IT & Electronics', volume:420000  },
-  { id:'s5', number:'SUP-005', name:'BASF SE',               commodity:'Raw Materials',    volume:880000  },
-  { id:'s6', number:'SUP-006', name:'Siemens Service GmbH',  commodity:'Services',         volume:310000  },
-  { id:'s7', number:'SUP-007', name:'DB Schenker AG',        commodity:'Logistics',        volume:540000  },
-  { id:'s8', number:'SUP-008', name:'Staples Business',      commodity:'MRO & Office',     volume:95000   },
+  { id:'s1',  number:'SUP-001', name:'Voestalpine AG',          commodity:'Metals',              volume:2100000 },
+  { id:'s2',  number:'SUP-002', name:'Novelis Deutschland GmbH', commodity:'Metals',             volume:890000  },
+  { id:'s3',  number:'SUP-003', name:'Cummins GmbH',            commodity:'Powertrain',          volume:1450000 },
+  { id:'s4',  number:'SUP-004', name:'ZF Friedrichshafen AG',   commodity:'Powertrain',          volume:1180000 },
+  { id:'s5',  number:'SUP-005', name:'BASF SE',                 commodity:'Chemicals',           volume:760000  },
+  { id:'s6',  number:'SUP-006', name:'Evonik Industries AG',    commodity:'Chemicals',           volume:430000  },
+  { id:'s7',  number:'SUP-007', name:'Bosch Rexroth AG',        commodity:'Electricals',         volume:920000  },
+  { id:'s8',  number:'SUP-008', name:'Phoenix Contact GmbH',    commodity:'Electricals',         volume:340000  },
+  { id:'s9',  number:'SUP-009', name:'Würth Group',             commodity:'Indirect',            volume:280000  },
+  { id:'s10', number:'SUP-010', name:'Bilfinger SE',            commodity:'Service & Solutions', volume:610000  },
+  { id:'s11', number:'SUP-011', name:'DB Schenker AG',          commodity:'Indirect',            volume:520000  },
+  { id:'s12', number:'SUP-012', name:'Siemens Industry GmbH',   commodity:'Service & Solutions', volume:390000  },
 ];
 const SAMPLE_PC = [
-  { id:'pc1', supplierId:'s1', percent:5.5, startDate:'2026-04-01', endDate:'2026-12-31', status:'in_negotiation' },
-  { id:'pc2', supplierId:'s1', percent:2.0, startDate:'2026-01-01', endDate:'2026-03-31', status:'agreement_done' },
-  { id:'pc3', supplierId:'s3', percent:3.8, startDate:'2026-03-01', endDate:'2026-12-31', status:'started'        },
-  { id:'pc4', supplierId:'s5', percent:7.2, startDate:'2026-05-01', endDate:'2026-12-31', status:'in_negotiation' },
-  { id:'pc5', supplierId:'s7', percent:4.5, startDate:'2026-04-01', endDate:'2026-09-30', status:'started'        },
+  { id:'pc1',  supplierId:'s1',  percent:6.5, startDate:'2026-01-01', endDate:'2026-12-31', status:'agreement_done' },
+  { id:'pc2',  supplierId:'s1',  percent:3.2, startDate:'2026-04-01', endDate:'2026-12-31', status:'in_negotiation' },
+  { id:'pc3',  supplierId:'s2',  percent:4.8, startDate:'2026-03-01', endDate:'2026-12-31', status:'in_negotiation' },
+  { id:'pc4',  supplierId:'s3',  percent:5.0, startDate:'2026-02-01', endDate:'2026-12-31', status:'agreement_done' },
+  { id:'pc5',  supplierId:'s4',  percent:7.5, startDate:'2026-05-01', endDate:'2026-12-31', status:'started'        },
+  { id:'pc6',  supplierId:'s5',  percent:3.9, startDate:'2026-03-01', endDate:'2026-09-30', status:'in_negotiation' },
+  { id:'pc7',  supplierId:'s7',  percent:4.2, startDate:'2026-04-01', endDate:'2026-12-31', status:'started'        },
+  { id:'pc8',  supplierId:'s10', percent:2.8, startDate:'2026-01-01', endDate:'2026-06-30', status:'agreement_done' },
+  { id:'pc9',  supplierId:'s11', percent:5.1, startDate:'2026-04-01', endDate:'2026-12-31', status:'started'        },
+  { id:'pc10', supplierId:'s3',  percent:2.5, startDate:'2026-01-01', endDate:'2026-03-31', status:'agreement_done' },
 ];
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "annualTarget": 600000,
+  "annualTarget": 1500000,
   "accentColor": "#3D6FE8",
   "currency": "€"
 }/*EDITMODE-END*/;
 
 const SAMPLE_DATA = [
-  { id: '1', number: 'SP-001', title: 'Raw Material Renegotiation – Steel', owner: 'M. Weber',    category: 'Raw Materials',    supplier: 'ThyssenKrupp AG',    savingsAmount: 120000, savingsPercent: 8.5,  status: 'completed',  startDate: '2026-01-10', deadline: '2026-03-31', measureType: 'Negotiation',          comments: 'Multi-year contract secured. Volume commitments included.' },
-  { id: '2', number: 'SP-002', title: 'Packaging Material Substitution',      owner: 'S. Müller',  category: 'Packaging',        supplier: 'DS Smith GmbH',      savingsAmount: 45000,  savingsPercent: 12.0, status: 'completed',  startDate: '2026-01-15', deadline: '2026-04-30', measureType: 'Substitution',         comments: '' },
-  { id: '3', number: 'SP-003', title: 'Logistics Cost Reduction',             owner: 'K. Schneider', category: 'Logistics',      supplier: 'DHL Supply Chain',   savingsAmount: 80000,  savingsPercent: 6.2,  status: 'in_progress',startDate: '2026-02-01', deadline: '2026-06-30', measureType: 'Negotiation',          comments: 'Final contract terms under review with legal.' },
-  { id: '4', number: 'SP-004', title: 'IT Hardware Consolidation',            owner: 'M. Weber',    category: 'IT & Electronics', supplier: 'Dell Technologies',  savingsAmount: 55000,  savingsPercent: 15.0, status: 'in_progress',startDate: '2026-02-15', deadline: '2026-05-31', measureType: 'Volume Optimization',  comments: '' },
-  { id: '5', number: 'SP-005', title: 'Office Supplies Framework Agreement',  owner: 'A. Fischer',  category: 'MRO & Office',     supplier: 'Staples Business',   savingsAmount: 18000,  savingsPercent: 22.0, status: 'in_progress',startDate: '2026-03-01', deadline: '2026-07-31', measureType: 'Substitution',         comments: '' },
-  { id: '6', number: 'SP-006', title: 'Chemical Procurement Strategy',        owner: 'S. Müller',   category: 'Raw Materials',    supplier: 'BASF SE',            savingsAmount: 95000,  savingsPercent: 9.8,  status: 'open',       startDate: '2026-04-01', deadline: '2026-09-30', measureType: 'Negotiation',          comments: 'RFQ being prepared. 3 bidders shortlisted.' },
-  { id: '7', number: 'SP-007', title: 'Maintenance Contract Renewal',         owner: 'K. Schneider',category: 'Services',         supplier: 'Siemens Service GmbH',savingsAmount: 32000, savingsPercent: 7.5,  status: 'open',       startDate: '2026-04-15', deadline: '2026-08-31', measureType: 'Process Optimization', comments: '' },
-  { id: '8', number: 'SP-008', title: 'Transport Route Optimization',         owner: 'A. Fischer',  category: 'Logistics',        supplier: 'DB Schenker AG',     savingsAmount: 28000,  savingsPercent: 11.2, status: 'open',       startDate: '2026-05-01', deadline: '2026-10-31', measureType: 'Volume Optimization',  comments: '' },
+  // ── Completed ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  { id:'1',  number:'SP-001', title:'Steel Flat Products Renegotiation',           owner:'M. Weber',     category:'Metals',              supplier:'Voestalpine AG',          savingsAmount:145000, savingsPercent:6.9,  status:'completed',   startDate:'2026-01-05', deadline:'2026-03-31', measureType:'Negotiation',          businessUnit:'Asphalt',           engineeringEffort:20,  oneTimeSaving:false, comments:'3-year framework signed. Indexed pricing clause included.' },
+  { id:'2',  number:'SP-002', title:'Aluminium Sheet Substitution – Drum Housing', owner:'K. Schneider', category:'Metals',              supplier:'Novelis Deutschland GmbH', savingsAmount:88000,  savingsPercent:9.9,  status:'completed',   startDate:'2026-01-15', deadline:'2026-04-15', measureType:'Substitution',         businessUnit:'Milling & Recycling', engineeringEffort:75,  oneTimeSaving:false, comments:'Spec change approved by R&D. Weight reduction of 4 kg achieved as side benefit.' },
+  { id:'3',  number:'SP-003', title:'Engine Seal Kit Volume Bundling',             owner:'T. Bauer',     category:'Powertrain',          supplier:'Cummins GmbH',            savingsAmount:62000,  savingsPercent:4.3,  status:'completed',   startDate:'2026-01-20', deadline:'2026-03-15', measureType:'Volume Optimization',  businessUnit:'Soil & Waste',        engineeringEffort:10,  oneTimeSaving:false, comments:'Cross-BU volumes consolidated for first time. Repeat cycle planned for Q3.' },
+  { id:'4',  number:'SP-004', title:'Hydraulic Fluid Specification Change',        owner:'A. Fischer',   category:'Chemicals',           supplier:'BASF SE',                 savingsAmount:41000,  savingsPercent:5.4,  status:'completed',   startDate:'2026-02-01', deadline:'2026-04-30', measureType:'Specification Change', businessUnit:'Asphalt',           engineeringEffort:55,  oneTimeSaving:false, comments:'Switch to synthetic grade reduces change intervals and total fluid consumption.' },
+  { id:'5',  number:'SP-005', title:'PLC Cabinet Wiring Standardisation',         owner:'M. Weber',     category:'Electricals',         supplier:'Phoenix Contact GmbH',    savingsAmount:34000,  savingsPercent:10.0, status:'completed',   startDate:'2026-02-10', deadline:'2026-04-30', measureType:'Process Optimization', businessUnit:'Light Equipment',   engineeringEffort:60,  oneTimeSaving:false, comments:'Common wiring standard across 3 product lines. Assembly time reduced by 12 %.' },
+  { id:'6',  number:'SP-006', title:'Facility Maintenance Contract Restructure',   owner:'S. Müller',    category:'Service & Solutions', supplier:'Bilfinger SE',            savingsAmount:29000,  savingsPercent:4.8,  status:'completed',   startDate:'2026-01-10', deadline:'2026-03-31', measureType:'Negotiation',          businessUnit:'Pure Commercial',   engineeringEffort:0,   oneTimeSaving:false, comments:'Moved from time & material to fixed-price model. SLA improved simultaneously.' },
+  // ── In Progress ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  { id:'7',  number:'SP-007', title:'Gearbox Casting – Single Source to Dual Source', owner:'K. Schneider', category:'Powertrain',       supplier:'ZF Friedrichshafen AG',   savingsAmount:175000, savingsPercent:8.2,  status:'in_progress', startDate:'2026-02-15', deadline:'2026-07-31', measureType:'Negotiation',          businessUnit:'Milling & Recycling', engineeringEffort:45,  oneTimeSaving:false, comments:'Second supplier qualification ongoing. Final audit planned for June.' },
+  { id:'8',  number:'SP-008', title:'Coating Chemical Portfolio Reduction',        owner:'A. Fischer',   category:'Chemicals',          supplier:'Evonik Industries AG',    savingsAmount:53000,  savingsPercent:12.3, status:'in_progress', startDate:'2026-03-01', deadline:'2026-08-31', measureType:'Substitution',         businessUnit:'Asphalt',           engineeringEffort:35,  oneTimeSaving:false, comments:'Lab validation of replacement product completed. Field test running on 2 machines.' },
+  { id:'9',  number:'SP-009', title:'Drive Motor Frame Size Harmonisation',        owner:'M. Weber',     category:'Electricals',        supplier:'Bosch Rexroth AG',        savingsAmount:98000,  savingsPercent:7.6,  status:'in_progress', startDate:'2026-03-10', deadline:'2026-09-30', measureType:'Specification Change', businessUnit:'Soil & Waste',        engineeringEffort:80,  oneTimeSaving:false, comments:'Reducing from 7 to 3 motor frame sizes across the portfolio. BOM cleanup in progress.' },
+  { id:'10', number:'SP-010', title:'MRO Catalogue Consolidation',                 owner:'S. Müller',    category:'Indirect',           supplier:'Würth Group',             savingsAmount:22000,  savingsPercent:7.9,  status:'in_progress', startDate:'2026-03-15', deadline:'2026-06-30', measureType:'Volume Optimization',  businessUnit:'Pure Commercial',   engineeringEffort:0,   oneTimeSaving:false, comments:'Reducing approved SKUs from 4,200 to 1,800. Catalogue upload to ERP in testing.' },
+  { id:'11', number:'SP-011', title:'Freight Forwarder Tender – European Lanes',   owner:'T. Bauer',     category:'Indirect',           supplier:'DB Schenker AG',          savingsAmount:67000,  savingsPercent:12.9, status:'in_progress', startDate:'2026-04-01', deadline:'2026-08-15', measureType:'Negotiation',          businessUnit:'Light Equipment',   engineeringEffort:0,   oneTimeSaving:false, comments:'RFQ issued to 5 carriers. Shortlisted 2 for final rounds.' },
+  { id:'12', number:'SP-012', title:'Predictive Maintenance Software Contract',    owner:'K. Schneider', category:'Service & Solutions', supplier:'Siemens Industry GmbH',   savingsAmount:44000,  savingsPercent:11.3, status:'in_progress', startDate:'2026-04-15', deadline:'2026-09-30', measureType:'Process Optimization', businessUnit:'Milling & Recycling', engineeringEffort:25,  oneTimeSaving:false, comments:'Pilot on 2 production lines completed. Rollout scope for remaining 6 lines being scoped.' },
+  // ── Open ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  { id:'13', number:'SP-013', title:'High-Strength Steel Alloy RFQ',               owner:'M. Weber',     category:'Metals',             supplier:'Voestalpine AG',          savingsAmount:112000, savingsPercent:5.3,  status:'open',        startDate:'2026-05-01', deadline:'2026-10-31', measureType:'Negotiation',          businessUnit:'Asphalt',           engineeringEffort:30,  oneTimeSaving:false, comments:'Scope defined. RFQ to be sent to 3 mills by end of May.' },
+  { id:'14', number:'SP-014', title:'Transmission Bearing Standard Platform',      owner:'T. Bauer',     category:'Powertrain',         supplier:'ZF Friedrichshafen AG',   savingsAmount:138000, savingsPercent:9.5,  status:'open',        startDate:'2026-05-15', deadline:'2026-11-30', measureType:'Specification Change', businessUnit:'Soil & Waste',        engineeringEffort:90,  oneTimeSaving:false, comments:'Engineering alignment needed before supplier talks can begin.' },
+  { id:'15', number:'SP-015', title:'Lubricant Framework Agreement 2027',          owner:'A. Fischer',   category:'Chemicals',          supplier:'BASF SE',                 savingsAmount:49000,  savingsPercent:6.4,  status:'open',        startDate:'2026-06-01', deadline:'2026-11-30', measureType:'Negotiation',          businessUnit:'Milling & Recycling', engineeringEffort:10,  oneTimeSaving:false, comments:'Current contract expires Dec 2026. Early engagement planned.' },
+  { id:'16', number:'SP-016', title:'Sensor & Encoder Cross-Platform Sourcing',    owner:'S. Müller',    category:'Electricals',        supplier:'Bosch Rexroth AG',        savingsAmount:76000,  savingsPercent:8.8,  status:'open',        startDate:'2026-06-15', deadline:'2026-12-15', measureType:'Volume Optimization',  businessUnit:'Light Equipment',   engineeringEffort:50,  oneTimeSaving:false, comments:'Volumes across Asphalt and Light Equipment to be pooled.' },
+  { id:'17', number:'SP-017', title:'Travel & Expense Policy Renegotiation',       owner:'T. Bauer',     category:'Indirect',           supplier:'',                        savingsAmount:18000,  savingsPercent:15.0, status:'open',        startDate:'2026-05-01', deadline:'2026-08-31', measureType:'Process Optimization', businessUnit:'Pure Commercial',   engineeringEffort:0,   oneTimeSaving:true,  comments:'Policy update to tighten hotel category caps and preferred airline program.' },
+  { id:'18', number:'SP-018', title:'Field Service Contract Benchmarking',         owner:'K. Schneider', category:'Service & Solutions', supplier:'Bilfinger SE',           savingsAmount:55000,  savingsPercent:9.0,  status:'open',        startDate:'2026-07-01', deadline:'2027-01-31', measureType:'Negotiation',          businessUnit:'Asphalt',           engineeringEffort:15,  oneTimeSaving:false, comments:'Market benchmark study commissioned. Results expected end of June.' },
+  // ── Ideas ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  { id:'19', number:'SP-019', title:'Cast Iron → Ductile Iron Housing Redesign',   owner:'M. Weber',     category:'Metals',             supplier:'',                        savingsAmount:95000,  savingsPercent:7.1,  status:'idea',        startDate:'', deadline:'', measureType:'Specification Change', businessUnit:'Milling & Recycling', engineeringEffort:85,  oneTimeSaving:false, comments:'Concept from R&D workshop. Would reduce machining time significantly but requires full re-qualification.' },
+  { id:'20', number:'SP-020', title:'Bio-based Adhesive Substitution',             owner:'A. Fischer',   category:'Chemicals',          supplier:'',                        savingsAmount:31000,  savingsPercent:8.5,  status:'idea',        startDate:'', deadline:'', measureType:'Substitution',         businessUnit:'Soil & Waste',        engineeringEffort:65,  oneTimeSaving:false, comments:'Supplier pitch received at trade fair. No internal testing done yet.' },
+  { id:'21', number:'SP-021', title:'Shared Engineering Services Hub – APAC',      owner:'T. Bauer',     category:'Service & Solutions', supplier:'',                       savingsAmount:120000, savingsPercent:18.0, status:'idea',        startDate:'', deadline:'', measureType:'Process Optimization', businessUnit:'Pure Commercial',   engineeringEffort:0,   oneTimeSaving:false, comments:'Strategic idea from last leadership offsite. Needs feasibility study.' },
+  { id:'22', number:'SP-022', title:'Hydraulic Cylinder Modular Platform',         owner:'K. Schneider', category:'Powertrain',         supplier:'',                        savingsAmount:160000, savingsPercent:11.0, status:'idea',        startDate:'', deadline:'', measureType:'Specification Change', businessUnit:'Asphalt',           engineeringEffort:95,  oneTimeSaving:false, comments:'Platform approach could unlock savings across 4 BUs. Very high engineering effort expected.' },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -175,18 +203,19 @@ function HBar({ data, accent }) {
 
 // ── Dashboard ────────────────────────────────────────────────
 function Dashboard({ projects, tweaks }) {
-  const total     = projects.reduce((s,p) => s + Number(p.savingsAmount), 0);
+  const total     = projects.filter(p => p.status !== 'idea').reduce((s,p) => s + Number(p.savingsAmount), 0);
   const completed = projects.filter(p => p.status === 'completed').reduce((s,p) => s + Number(p.savingsAmount), 0);
   const inProg    = projects.filter(p => p.status === 'in_progress').reduce((s,p) => s + Number(p.savingsAmount), 0);
   const open      = projects.filter(p => p.status === 'open').reduce((s,p) => s + Number(p.savingsAmount), 0);
-  const avgPct    = projects.length ? projects.reduce((s,p) => s + Number(p.savingsPercent), 0) / projects.length : 0;
+  const ideas     = projects.filter(p => p.status === 'idea').reduce((s,p) => s + Number(p.savingsAmount), 0);
+  const avgPct    = projects.filter(p=>p.status!=='idea').length ? projects.filter(p=>p.status!=='idea').reduce((s,p) => s + Number(p.savingsPercent), 0) / projects.filter(p=>p.status!=='idea').length : 0;
   const targetPct = tweaks.annualTarget ? (total / tweaks.annualTarget * 100) : 0;
 
-  const byCat = CATEGORIES.map(c => ({ k:c, v:projects.filter(p=>p.category===c).reduce((s,p)=>s+Number(p.savingsAmount),0) }))
+  const byCat = CATEGORIES.map(c => ({ k:c, v:projects.filter(p=>p.category===c && p.status!=='idea').reduce((s,p)=>s+Number(p.savingsAmount),0) }))
     .filter(d => d.v > 0).sort((a,b) => b.v - a.v);
 
   const suppMap = {};
-  projects.forEach(p => { suppMap[p.supplier] = (suppMap[p.supplier]||0) + Number(p.savingsAmount); });
+  projects.filter(p=>p.status!=='idea').forEach(p => { suppMap[p.supplier] = (suppMap[p.supplier]||0) + Number(p.savingsAmount); });
   const topSupp = Object.entries(suppMap).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v).slice(0,5);
 
   const KPI = ({ label, val, sub, color='#111827' }) => (
@@ -198,17 +227,18 @@ function Dashboard({ projects, tweaks }) {
   );
 
   const StatusRow = ({ s }) => {
-    const v = s === 'completed' ? completed : s === 'in_progress' ? inProg : open;
+    const v = s === 'completed' ? completed : s === 'in_progress' ? inProg : s === 'open' ? open : ideas;
     const cnt = projects.filter(p=>p.status===s).length;
-    const pct = total ? v/total*100 : 0;
+    const base = s === 'idea' ? projects.reduce((sum,p)=>sum+Number(p.savingsAmount),0) : total;
+    const pct = base ? v/base*100 : 0;
     return (
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
         <span style={{ width:8, height:8, borderRadius:'50%', background:STATUS_CLR[s], flexShrink:0 }} />
         <span style={{ fontSize:12, color:'#374151', width:90, flexShrink:0 }}>{STATUS[s]}</span>
         <div style={{ flex:1, height:6, background:'#F1F5F9', borderRadius:3, overflow:'hidden' }}>
-          <div style={{ height:'100%', width:`${pct}%`, background:STATUS_CLR[s], borderRadius:3, transition:'width 0.6s ease' }} />
+          <div style={{ height:'100%', width:`${pct}%`, background: s==='idea' ? STATUS_CLR[s]+'88' : STATUS_CLR[s], borderRadius:3, transition:'width 0.6s ease', backgroundImage: s==='idea' ? `repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.3) 3px, rgba(255,255,255,0.3) 6px)` : 'none' }} />
         </div>
-        <span style={{ fontSize:11, fontWeight:600, color:'#6B7280', width:80, textAlign:'right' }}>{fmtEur(v, tweaks.currency)}</span>
+        <span style={{ fontSize:11, fontWeight:600, color: s==='idea' ? '#A855F7' : '#6B7280', width:80, textAlign:'right' }}>{fmtEur(v, tweaks.currency)}</span>
         <span style={{ fontSize:11, color:'#B0B7C3', width:20 }}>{cnt}</span>
       </div>
     );
@@ -216,13 +246,24 @@ function Dashboard({ projects, tweaks }) {
 
   return (
     <div style={{ flex:1, overflowY:'auto', padding:'28px 32px', display:'flex', flexDirection:'column', gap:20 }}>
+      {/* Idea Pool Banner */}
+      {projects.filter(p=>p.status==='idea').length > 0 && (
+        <div style={{ background:'#FAF5FF', border:'1.5px dashed #D8B4FE', borderRadius:12, padding:'12px 20px', display:'flex', alignItems:'center', gap:12 }}>
+          <span style={{ fontSize:18 }}>💡</span>
+          <div style={{ flex:1 }}>
+            <span style={{ fontWeight:700, color:'#7E22CE', fontSize:12 }}>Idea Pool</span>
+            <span style={{ color:'#9333EA', fontSize:12 }}> · {projects.filter(p=>p.status==='idea').length} idea{projects.filter(p=>p.status==='idea').length!==1?'s':''} · {fmtEur(ideas, tweaks.currency)} potential</span>
+          </div>
+          <span style={{ fontSize:11, color:'#A78BFA', fontWeight:500, fontStyle:'italic' }}>Not included in forecast or planning</span>
+        </div>
+      )}
       {/* KPI Row */}
       <div style={{ display:'flex', gap:14, flexWrap:'wrap' }}>
-        <KPI label="Total Savings" val={fmtEur(total, tweaks.currency)} sub={`${projects.length} active projects`} color={tweaks.accentColor} />
+        <KPI label="Total Savings" val={fmtEur(total, tweaks.currency)} sub={`${projects.filter(p=>p.status!=='idea').length} active projects`} color={tweaks.accentColor} />
         <KPI label="Completed"     val={fmtEur(completed, tweaks.currency)} sub={`${projects.filter(p=>p.status==='completed').length} projects`} color="#22C55E" />
         <KPI label="In Progress"   val={fmtEur(inProg, tweaks.currency)}    sub={`${projects.filter(p=>p.status==='in_progress').length} projects`} color="#F59E0B" />
         <KPI label="Pipeline"      val={fmtEur(open, tweaks.currency)}       sub={`${projects.filter(p=>p.status==='open').length} projects`} color="#94A3B8" />
-        <KPI label="Avg. Savings"  val={fmtPct(avgPct)} sub="across all projects" />
+        <KPI label="Avg. Savings"  val={fmtPct(avgPct)} sub="excl. ideas" />
       </div>
 
       {/* Row 2: Target + Status breakdown + Category */}
@@ -255,6 +296,10 @@ function Dashboard({ projects, tweaks }) {
           <StatusRow s="completed" />
           <StatusRow s="in_progress" />
           <StatusRow s="open" />
+          <div style={{ borderTop:'1px dashed #E8EBF0', marginTop:4, paddingTop:4 }}>
+            <StatusRow s="idea" />
+          </div>
+          <div style={{ fontSize:10, color:'#B0B7C3', fontStyle:'italic', marginTop:2 }}>💡 Ideas not included in forecast</div>
         </div>
 
         {/* Category chart */}
@@ -300,6 +345,7 @@ const COLS = [
   { key:'number',        label:'No.',      w:72,  align:'left' },
   { key:'title',         label:'Project',  flex:1, align:'left' },
   { key:'owner',         label:'Owner',    w:110, align:'left' },
+  { key:'businessUnit',  label:'BU',       w:140, align:'left' },
   { key:'category',      label:'Category', w:130, align:'left' },
   { key:'supplier',      label:'Supplier', w:155, align:'left' },
   { key:'savingsAmount', label:'Savings',  w:115, align:'right' },
@@ -307,21 +353,68 @@ const COLS = [
   { key:'status',        label:'Status',   w:130, align:'left' },
   { key:'deadline',      label:'Deadline', w:100, align:'left' },
 ];
-const EDITABLE = ['title','owner','supplier','savingsAmount','savingsPercent','status','deadline','category'];
+const EDITABLE = ['title','owner','supplier','savingsAmount','savingsPercent','status','deadline','category','businessUnit'];
+
+// ── Fiscal Year helpers (Oct 1 → Sep 30) ────────────────────
+const FY_PRESETS = (() => {
+  const today = new Date();
+  const curFYStart = today >= new Date(today.getFullYear(), 9, 1)
+    ? new Date(today.getFullYear(), 9, 1)
+    : new Date(today.getFullYear() - 1, 9, 1);
+  const presets = [];
+  for (let i = -1; i <= 2; i++) {
+    const start = new Date(curFYStart.getFullYear() + i, 9, 1);
+    const end   = new Date(start.getFullYear() + 1, 8, 30);
+    const fy    = start.getFullYear() + 1;
+    presets.push({ label: `FY ${fy}`, from: start.toISOString().slice(0,10), to: end.toISOString().slice(0,10) });
+  }
+  return presets;
+})();
 
 function ListView({ projects, onEdit, onDelete, onAdd, tweaks }) {
-  const [q,       setQ]       = useState('');
-  const [fStatus, setFStatus] = useState('all');
-  const [fCat,    setFCat]    = useState('all');
-  const [sort,    setSort]    = useState({ key:'number', dir:1 });
-  const [cell,    setCell]    = useState(null);
-  const [val,     setVal]     = useState('');
+  const [q,         setQ]         = useState('');
+  const [fStatus,   setFStatus]   = useState('all');
+  const [fCat,      setFCat]      = useState('all');
+  const [fBU,       setFBU]       = useState('all');
+  const [fOwner,    setFOwner]    = useState('all');
+  const [dateFrom,  setDateFrom]  = useState('');
+  const [dateTo,    setDateTo]    = useState('');
+  const [fyPreset,  setFyPreset]  = useState('');
+  const [showDate,  setShowDate]  = useState(false);
+  const [sort,      setSort]      = useState({ key:'number', dir:1 });
+  const [cell,      setCell]      = useState(null);
+  const [val,       setVal]       = useState('');
+  const dateRef = useRef(null);
+
+  // close date popover on outside click
+  useEffect(() => {
+    if (!showDate) return;
+    const handler = e => { if (dateRef.current && !dateRef.current.contains(e.target)) setShowDate(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showDate]);
+
+  const applyPreset = preset => {
+    setFyPreset(preset.label);
+    setDateFrom(preset.from);
+    setDateTo(preset.to);
+  };
+  const clearDate = () => { setDateFrom(''); setDateTo(''); setFyPreset(''); };
+
+  const owners = [...new Set(projects.map(p => p.owner).filter(Boolean))].sort();
+
+  const activeDateLabel = fyPreset || (dateFrom || dateTo
+    ? `${dateFrom || '…'} → ${dateTo || '…'}` : null);
 
   const rows = projects
     .filter(p => {
-      if (q && !`${p.title} ${p.number} ${p.supplier} ${p.owner} ${p.category}`.toLowerCase().includes(q.toLowerCase())) return false;
+      if (q && !`${p.title} ${p.number} ${p.supplier} ${p.owner} ${p.category} ${p.businessUnit||''}`.toLowerCase().includes(q.toLowerCase())) return false;
       if (fStatus !== 'all' && p.status !== fStatus) return false;
       if (fCat    !== 'all' && p.category !== fCat)  return false;
+      if (fBU     !== 'all' && (p.businessUnit||'') !== fBU) return false;
+      if (fOwner  !== 'all' && p.owner !== fOwner) return false;
+      if (dateFrom && p.startDate && p.startDate < dateFrom) return false;
+      if (dateTo   && p.startDate && p.startDate > dateTo)   return false;
       return true;
     })
     .sort((a,b) => {
@@ -343,23 +436,90 @@ function ListView({ projects, onEdit, onDelete, onAdd, tweaks }) {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden' }}>
-      {/* Toolbar */}
-      <div style={{ padding:'14px 32px', borderBottom:'1px solid #E8EBF0', background:'#fff', display:'flex', gap:10, alignItems:'center', flexShrink:0 }}>
+      {/* Toolbar – Row 1 */}
+      <div style={{ padding:'12px 32px 0', background:'#fff', display:'flex', gap:10, alignItems:'center', flexShrink:0, flexWrap:'wrap' }}>
+        {/* Search */}
         <div style={{ position:'relative' }}>
           <svg style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#9CA3AF' }} width="13" height="13" fill="none" viewBox="0 0 15 15">
             <path d="M6.5 11a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm3.89-.61 2.72 2.72" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
           <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search…"
-            style={{ ...selSt, paddingLeft:30, width:200 }} />
+            style={{ ...selSt, paddingLeft:30, width:190 }} />
         </div>
+        {/* Status */}
         <select value={fStatus} onChange={e=>setFStatus(e.target.value)} style={selSt}>
           <option value="all">All Statuses</option>
           {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
         </select>
+        {/* Owner */}
+        <select value={fOwner} onChange={e=>setFOwner(e.target.value)} style={selSt}>
+          <option value="all">All Owners</option>
+          {owners.map(o=><option key={o} value={o}>{o}</option>)}
+        </select>
+        {/* Category */}
         <select value={fCat} onChange={e=>setFCat(e.target.value)} style={selSt}>
           <option value="all">All Categories</option>
           {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
         </select>
+        {/* Business Unit */}
+        <select value={fBU} onChange={e=>setFBU(e.target.value)} style={selSt}>
+          <option value="all">All Business Units</option>
+          {BUSINESS_UNITS.map(b=><option key={b} value={b}>{b}</option>)}
+        </select>
+        {/* Date Range Button */}
+        <div style={{ position:'relative' }} ref={dateRef}>
+          <button onClick={()=>setShowDate(v=>!v)} style={{
+            ...selSt, display:'flex', alignItems:'center', gap:6, cursor:'pointer',
+            background: activeDateLabel ? tweaks.accentColor+'12' : '#fff',
+            borderColor: activeDateLabel ? tweaks.accentColor : '#E8EBF0',
+            color: activeDateLabel ? tweaks.accentColor : '#374151',
+            fontWeight: activeDateLabel ? 600 : 400,
+          }}>
+            <svg width="12" height="12" fill="none" viewBox="0 0 15 15">
+              <rect x="1" y="2" width="13" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M1 6h13" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M5 1v2M10 1v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+            {activeDateLabel ? activeDateLabel : 'Start Date'}
+            {activeDateLabel && (
+              <span onClick={e=>{e.stopPropagation(); clearDate();}} style={{ marginLeft:2, opacity:0.6, fontSize:13, lineHeight:1 }}>×</span>
+            )}
+          </button>
+          {showDate && (
+            <div style={{ position:'absolute', top:'calc(100% + 6px)', left:0, zIndex:50, background:'#fff', borderRadius:12, border:'1px solid #E8EBF0', boxShadow:'0 8px 28px rgba(0,0,0,0.12)', padding:18, width:310 }}>
+              {/* FY Presets */}
+              <div style={{ fontSize:10, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8 }}>Fiscal Year</div>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:14 }}>
+                {FY_PRESETS.map(p => (
+                  <button key={p.label} onClick={()=>applyPreset(p)} style={{
+                    padding:'4px 12px', borderRadius:20, border:'1px solid', fontSize:11, fontWeight:600, cursor:'pointer', transition:'all 0.12s',
+                    background: fyPreset===p.label ? tweaks.accentColor : '#F1F5F9',
+                    borderColor: fyPreset===p.label ? tweaks.accentColor : '#E8EBF0',
+                    color: fyPreset===p.label ? '#fff' : '#374151',
+                  }}>{p.label}</button>
+                ))}
+              </div>
+              {/* Custom Range */}
+              <div style={{ fontSize:10, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8 }}>Custom Range</div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                <div>
+                  <div style={{ fontSize:10, color:'#9CA3AF', marginBottom:4 }}>From</div>
+                  <input type="date" value={dateFrom} onChange={e=>{setDateFrom(e.target.value); setFyPreset('');}}
+                    style={{ width:'100%', padding:'6px 8px', border:'1px solid #E8EBF0', borderRadius:7, fontSize:12, outline:'none', fontFamily:'inherit' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize:10, color:'#9CA3AF', marginBottom:4 }}>To</div>
+                  <input type="date" value={dateTo} onChange={e=>{setDateTo(e.target.value); setFyPreset('');}}
+                    style={{ width:'100%', padding:'6px 8px', border:'1px solid #E8EBF0', borderRadius:7, fontSize:12, outline:'none', fontFamily:'inherit' }} />
+                </div>
+              </div>
+              <div style={{ display:'flex', justifyContent:'flex-end', marginTop:12 }}>
+                <button onClick={clearDate} style={{ fontSize:11, color:'#9CA3AF', background:'none', border:'none', cursor:'pointer', fontWeight:600 }}>Clear</button>
+                <button onClick={()=>setShowDate(false)} style={{ marginLeft:10, fontSize:11, padding:'5px 14px', background:tweaks.accentColor, color:'#fff', border:'none', borderRadius:7, cursor:'pointer', fontWeight:600 }}>Apply</button>
+              </div>
+            </div>
+          )}
+        </div>
         <div style={{ flex:1 }} />
         <span style={{ fontSize:11, color:'#B0B7C3' }}>{rows.length} project{rows.length!==1?'s':''}</span>
         <button onClick={onAdd}
@@ -367,6 +527,29 @@ function ListView({ projects, onEdit, onDelete, onAdd, tweaks }) {
           + New Project
         </button>
       </div>
+      {/* Active filter chips */}
+      {(fStatus!=='all'||fCat!=='all'||fBU!=='all'||fOwner!=='all'||activeDateLabel) && (
+        <div style={{ padding:'8px 32px', background:'#fff', display:'flex', gap:6, flexWrap:'wrap', borderBottom:'1px solid #E8EBF0', flexShrink:0 }}>
+          {[
+            fStatus!=='all' && { label: STATUS[fStatus], clear:()=>setFStatus('all') },
+            fOwner!=='all'  && { label: fOwner,          clear:()=>setFOwner('all')  },
+            fCat!=='all'    && { label: fCat,             clear:()=>setFCat('all')    },
+            fBU!=='all'     && { label: fBU,              clear:()=>setFBU('all')     },
+            activeDateLabel && { label: activeDateLabel,  clear: clearDate             },
+          ].filter(Boolean).map((chip,i) => (
+            <span key={i} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:600, background:tweaks.accentColor+'14', color:tweaks.accentColor }}>
+              {chip.label}
+              <span onClick={chip.clear} style={{ cursor:'pointer', opacity:0.65, fontSize:13, lineHeight:1 }}>×</span>
+            </span>
+          ))}
+          <button onClick={()=>{ setFStatus('all'); setFCat('all'); setFBU('all'); setFOwner('all'); clearDate(); }}
+            style={{ fontSize:11, color:'#9CA3AF', background:'none', border:'none', cursor:'pointer', fontWeight:600, padding:'0 4px' }}>Clear all</button>
+        </div>
+      )}
+      {/* Active filters separator when no chips */}
+      {!(fStatus!=='all'||fCat!=='all'||fBU!=='all'||fOwner!=='all'||activeDateLabel) && (
+        <div style={{ borderBottom:'1px solid #E8EBF0', background:'#fff', paddingBottom:12, flexShrink:0 }} />
+      )}
       {/* Table */}
       <div style={{ flex:1, overflowY:'auto', overflowX:'auto' }}>
         <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
@@ -396,6 +579,12 @@ function ListView({ projects, onEdit, onDelete, onAdd, tweaks }) {
                   if (c.key==='status')         display = <Badge status={p.status} />;
                   else if (c.key==='savingsAmount') display = <strong style={{ color:'#111827', fontWeight:700 }}>{fmtEur(p[c.key], tweaks.currency)}</strong>;
                   else if (c.key==='savingsPercent') display = <span style={{ color:'#6B7280' }}>{fmtPct(p[c.key])}</span>;
+                  else if (c.key==='businessUnit') display = p.businessUnit
+                    ? <span style={{ background:'#EEF4FF', color:'#3D6FE8', padding:'2px 9px', borderRadius:10, fontSize:11, fontWeight:600 }}>{p.businessUnit}</span>
+                    : <span style={{ color:'#D1D5DB' }}>—</span>;
+                  else if (c.key==='deadline') display = p.oneTimeSaving
+                    ? <span style={{ background:'#FFF7ED', color:'#F59E0B', padding:'2px 9px', borderRadius:10, fontSize:11, fontWeight:600 }}>One Time</span>
+                    : <span style={{ color:'#374151' }}>{p.deadline || <span style={{color:'#D1D5DB'}}>—</span>}</span>;
                   else display = <span style={{ color: c.key==='number' ? '#9CA3AF' : '#374151' }}>{p[c.key]}</span>;
                   return (
                     <td key={c.key} style={{ padding:'10px 14px', textAlign:c.align, whiteSpace: c.key==='title'?'normal':'nowrap' }}
@@ -410,6 +599,12 @@ function ListView({ projects, onEdit, onDelete, onAdd, tweaks }) {
                           <select value={val} onChange={e=>setVal(e.target.value)} onBlur={commit} autoFocus
                             style={{ fontSize:12, border:`1.5px solid ${tweaks.accentColor}`, borderRadius:6, padding:'2px 6px', outline:'none' }}>
                             {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+                          </select>
+                        ) : c.key==='businessUnit' ? (
+                          <select value={val} onChange={e=>setVal(e.target.value)} onBlur={commit} autoFocus
+                            style={{ fontSize:12, border:`1.5px solid ${tweaks.accentColor}`, borderRadius:6, padding:'2px 6px', outline:'none' }}>
+                            <option value="">—</option>
+                            {BUSINESS_UNITS.map(b=><option key={b} value={b}>{b}</option>)}
                           </select>
                         ) : (
                           <input value={val} onChange={e=>setVal(e.target.value)}
@@ -448,27 +643,40 @@ function ListView({ projects, onEdit, onDelete, onAdd, tweaks }) {
 
 // ── Kanban ───────────────────────────────────────────────────
 function Kanban({ projects, onEdit, onAdd, tweaks, onStatusChange }) {
-  const cols = ['open','in_progress','completed'];
+  const cols = ['idea','open','in_progress','completed'];
   return (
     <div style={{ flex:1, overflowX:'auto', padding:'24px 32px', display:'flex', gap:16, alignItems:'flex-start' }}>
       {cols.map(status => {
         const items = projects.filter(p => p.status===status);
         const tot   = items.reduce((s,p) => s+Number(p.savingsAmount),0);
         return (
-          <div key={status} style={{ flex:'0 0 310px', background:'#EAECF0', borderRadius:14, padding:'14px 14px 10px', minHeight:200 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:14, padding:'0 4px' }}>
+          <div key={status} style={{
+            flex:'0 0 310px',
+            background: status==='idea' ? '#F5F0FF' : '#EAECF0',
+            borderRadius:14, padding:'14px 14px 10px', minHeight:200,
+            border: status==='idea' ? '2px dashed #D8B4FE' : 'none'
+          }}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom: status==='idea' ? 6 : 14, padding:'0 4px' }}>
               <span style={{ width:9, height:9, borderRadius:'50%', background:STATUS_CLR[status], flexShrink:0 }} />
               <span style={{ fontWeight:700, fontSize:12, color:'#374151', textTransform:'uppercase', letterSpacing:'0.05em' }}>{STATUS[status]}</span>
               <span style={{ marginLeft:'auto', fontSize:11, color:'#9CA3AF', fontWeight:500 }}>{items.length}</span>
               <span style={{ fontSize:11, fontWeight:700, color:STATUS_CLR[status] }}>{fmtEur(tot, tweaks.currency)}</span>
             </div>
+            {status==='idea' && (
+              <div style={{ fontSize:10, color:'#A78BFA', fontStyle:'italic', marginBottom:12, padding:'0 4px', lineHeight:1.4 }}>
+                💡 Ideas only — not included in forecast or planning
+              </div>
+            )}
             <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
               {items.map(p => (
                 <div key={p.id} onClick={()=>onEdit(p.id)}
-                  style={{ background:'#fff', borderRadius:10, padding:'13px 15px', cursor:'pointer', border:'1px solid #E8EBF0', boxShadow:'0 1px 3px rgba(0,0,0,0.04)', transition:'box-shadow 0.15s, transform 0.15s' }}
+                  style={{ background:'#fff', borderRadius:10, padding:'13px 15px', cursor:'pointer', border: status==='idea' ? '1px solid #E9D5FF' : '1px solid #E8EBF0', boxShadow:'0 1px 3px rgba(0,0,0,0.04)', transition:'box-shadow 0.15s, transform 0.15s' }}
                   onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 6px 16px rgba(0,0,0,0.10)'; e.currentTarget.style.transform='translateY(-1px)';}}
                   onMouseLeave={e=>{e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)'; e.currentTarget.style.transform='';}}>
-                  <div style={{ fontSize:10, color:'#B0B7C3', marginBottom:5, fontWeight:600, letterSpacing:'0.05em' }}>{p.number}</div>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:5 }}>
+                    <span style={{ fontSize:10, color:'#B0B7C3', fontWeight:600, letterSpacing:'0.05em' }}>{p.number}</span>
+                    {status==='idea' && <span style={{ fontSize:9, color:'#A78BFA', background:'#FAF5FF', border:'1px solid #E9D5FF', padding:'1px 7px', borderRadius:10, fontWeight:700, letterSpacing:'0.04em' }}>IDEA</span>}
+                  </div>
                   <div style={{ fontWeight:600, fontSize:12.5, color:'#111827', marginBottom:10, lineHeight:1.45, textWrap:'pretty' }}>{p.title}</div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
                     <span style={{ fontSize:17, fontWeight:800, color:tweaks.accentColor, letterSpacing:'-0.3px' }}>{fmtEur(p.savingsAmount, tweaks.currency)}</span>
@@ -476,7 +684,15 @@ function Kanban({ projects, onEdit, onAdd, tweaks, onStatusChange }) {
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'#9CA3AF', marginBottom:10 }}>
                     <span>{p.owner}</span>
-                    {p.deadline && <span>Due {p.deadline}</span>}
+                    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                      {p.businessUnit !== 'Pure Commercial' && Number(p.engineeringEffort) > 0 && (() => {
+                        const e = Number(p.engineeringEffort);
+                        const c = e <= 25 ? '#22C55E' : e <= 50 ? '#F59E0B' : e <= 75 ? '#EF4444' : '#7C3AED';
+                        const l = e <= 25 ? 'Low' : e <= 50 ? 'Med' : e <= 75 ? 'High' : 'Crit';
+                        return <span style={{ fontSize:10, fontWeight:700, color:c, background:c+'18', padding:'1px 7px', borderRadius:10 }}>⚙ {l}</span>;
+                      })()}
+                      {p.deadline && <span>Due {p.deadline}</span>}
+                    </div>
                   </div>
                   <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
                     {cols.filter(s=>s!==status).map(s => (
@@ -505,7 +721,7 @@ function Kanban({ projects, onEdit, onAdd, tweaks, onStatusChange }) {
 }
 
 // ── Project Modal ────────────────────────────────────────────
-const EMPTY_FORM = { number:'', title:'', owner:'', category:'Raw Materials', supplier:'', savingsAmount:'', savingsPercent:'', status:'open', startDate:'', deadline:'', measureType:'Negotiation', comments:'' };
+const EMPTY_FORM = { number:'', title:'', owner:'', category:'Raw Materials', supplier:'', savingsAmount:'', savingsPercent:'', status:'open', startDate:'', deadline:'', measureType:'Negotiation', businessUnit:'', oneTimeSaving:false, engineeringEffort:0, comments:'' };
 
 function ProjectModal({ project, projects, onSave, onClose, tweaks }) {
   const isNew = !project?.id;
@@ -518,7 +734,9 @@ function ProjectModal({ project, projects, onSave, onClose, tweaks }) {
 
   const save = () => {
     if (!form.title.trim()) { setErr('Project title is required.'); return; }
-    onSave({ ...form, id: form.id || genId(), savingsAmount: Number(form.savingsAmount)||0, savingsPercent: Number(form.savingsPercent)||0 });
+    const saved = { ...form, id: form.id || genId(), savingsAmount: Number(form.savingsAmount)||0, savingsPercent: Number(form.savingsPercent)||0 };
+    if (saved.oneTimeSaving) saved.deadline = '';
+    onSave(saved);
   };
 
   return (
@@ -547,6 +765,19 @@ function ProjectModal({ project, projects, onSave, onClose, tweaks }) {
             <label style={lStyle}>Status</label>
             <select value={form.status} onChange={e=>set('status',e.target.value)} style={iStyle}>
               {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+            </select>
+            {form.status === 'idea' && (
+              <div style={{ marginTop:7, display:'flex', alignItems:'flex-start', gap:7, padding:'8px 11px', background:'#FAF5FF', borderRadius:8, border:'1px solid #E9D5FF' }}>
+                <span style={{ fontSize:14, flexShrink:0 }}>💡</span>
+                <span style={{ fontSize:11, color:'#7E22CE', lineHeight:1.5 }}>Ideas are not included in forecast or planning. Use this status to collect potential savings without commitment.</span>
+              </div>
+            )}
+          </div>
+          <div>
+            <label style={lStyle}>Business Unit</label>
+            <select value={form.businessUnit} onChange={e=>set('businessUnit',e.target.value)} style={iStyle}>
+              <option value="">— Select —</option>
+              {BUSINESS_UNITS.map(b=><option key={b} value={b}>{b}</option>)}
             </select>
           </div>
           <div>
@@ -582,7 +813,107 @@ function ProjectModal({ project, projects, onSave, onClose, tweaks }) {
           </div>
           <div>
             <label style={lStyle}>Deadline</label>
-            <input type="date" value={form.deadline} onChange={e=>set('deadline',e.target.value)} style={iStyle} />
+            {form.oneTimeSaving ? (
+              <div style={{ padding:'8px 11px', border:'1px solid #E8EBF0', borderRadius:9, fontSize:13, color:'#B0B7C3', background:'#F9FAFB', display:'flex', alignItems:'center', gap:7, cursor:'not-allowed' }}>
+                <svg width="13" height="13" fill="none" viewBox="0 0 15 15"><path d="M7.5 1a6.5 6.5 0 100 13A6.5 6.5 0 007.5 1zM4 7.5h7" stroke="#D1D5DB" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                <span style={{ fontSize:12 }}>One Time — no end date</span>
+              </div>
+            ) : (
+              <input type="date" value={form.deadline} onChange={e=>set('deadline',e.target.value)} style={iStyle} />
+            )}
+          </div>
+          <div style={{ gridColumn:'1 / -1' }}>
+            <label
+              onClick={()=>set('oneTimeSaving', !form.oneTimeSaving)}
+              style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', padding:'12px 14px', borderRadius:10, border:`1.5px solid ${form.oneTimeSaving ? tweaks.accentColor : '#E8EBF0'}`, background: form.oneTimeSaving ? tweaks.accentColor+'0D' : '#FAFAFA', transition:'all 0.15s', userSelect:'none' }}>
+              {/* Custom checkbox */}
+              <span style={{
+                width:18, height:18, borderRadius:5, border:`2px solid ${form.oneTimeSaving ? tweaks.accentColor : '#D1D5DB'}`,
+                background: form.oneTimeSaving ? tweaks.accentColor : '#fff',
+                display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'all 0.15s'
+              }}>
+                {form.oneTimeSaving && (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5l2.5 2.5L8 3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </span>
+              <div>
+                <div style={{ fontSize:13, fontWeight:600, color: form.oneTimeSaving ? tweaks.accentColor : '#374151' }}>One Time Saving</div>
+                <div style={{ fontSize:11, color:'#9CA3AF', marginTop:1 }}>Saving is fully recognized at the start date — no end date required</div>
+              </div>
+            </label>
+          </div>
+          <div style={{ gridColumn:'1 / -1' }}>
+            {(() => {
+              const isPureCommercial = form.businessUnit === 'Pure Commercial';
+              const effort = Number(form.engineeringEffort) || 0;
+              const LEVELS = [
+                { min:0,  max:0,  label:'None',    color:'#9CA3AF', bg:'#F1F5F9' },
+                { min:1,  max:25, label:'Low',     color:'#22C55E', bg:'#F0FDF4' },
+                { min:26, max:50, label:'Medium',  color:'#F59E0B', bg:'#FFFBEB' },
+                { min:51, max:75, label:'High',    color:'#EF4444', bg:'#FEF2F2' },
+                { min:76, max:100,label:'Critical', color:'#7C3AED', bg:'#F5F3FF' },
+              ];
+              const lvl = LEVELS.find(l => effort >= l.min && effort <= l.max) || LEVELS[0];
+              const trackPct = effort;
+              return (
+                <div style={{ padding:'16px', borderRadius:10, border:`1.5px solid ${isPureCommercial ? '#E8EBF0' : '#E8EBF0'}`, background: isPureCommercial ? '#F9FAFB' : '#fff', transition:'all 0.2s' }}>
+                  {/* Header row */}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: isPureCommercial ? 0 : 14 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <svg width="14" height="14" fill="none" viewBox="0 0 15 15">
+                        <path d="M3 7.5a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM7.5 5v2.5l1.5 1.5" stroke={isPureCommercial ? '#D1D5DB' : '#6B7280'} strokeWidth="1.4" strokeLinecap="round"/>
+                      </svg>
+                      <span style={{ fontSize:11, fontWeight:700, color: isPureCommercial ? '#B0B7C3' : '#374151', textTransform:'uppercase', letterSpacing:'0.07em' }}>Engineering Effort</span>
+                    </div>
+                    {isPureCommercial ? (
+                      <span style={{ fontSize:11, color:'#B0B7C3', fontStyle:'italic', fontWeight:500 }}>N/A — Pure Commercial</span>
+                    ) : (
+                      <span style={{ fontSize:13, fontWeight:800, color: lvl.color, background: lvl.bg, padding:'3px 12px', borderRadius:20, transition:'all 0.2s' }}>
+                        {effort === 0 ? 'None' : `${effort} % · ${lvl.label}`}
+                      </span>
+                    )}
+                  </div>
+                  {!isPureCommercial && (
+                    <>
+                      {/* Slider */}
+                      <div style={{ position:'relative', paddingBottom:6 }}>
+                        <style>{`
+                          .eng-slider { -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:6px; outline:none; cursor:pointer; background: linear-gradient(to right, ${lvl.color} 0%, ${lvl.color} ${trackPct}%, #E5E7EB ${trackPct}%, #E5E7EB 100%); transition: background 0.15s; }
+                          .eng-slider::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#fff; border:2.5px solid ${lvl.color}; box-shadow:0 1px 6px rgba(0,0,0,0.15); cursor:pointer; transition:border-color 0.15s, transform 0.1s; }
+                          .eng-slider::-webkit-slider-thumb:hover { transform:scale(1.15); }
+                          .eng-slider::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#fff; border:2.5px solid ${lvl.color}; box-shadow:0 1px 6px rgba(0,0,0,0.15); cursor:pointer; }
+                        `}</style>
+                        <input type="range" min="0" max="100" step="5" value={effort}
+                          onChange={e=>set('engineeringEffort', Number(e.target.value))}
+                          className="eng-slider" />
+                      </div>
+                      {/* Tick labels */}
+                      <div style={{ display:'flex', justifyContent:'space-between', marginTop:4 }}>
+                        {['0','25','50','75','100'].map(t => (
+                          <span key={t} style={{ fontSize:10, color:'#B0B7C3', fontWeight:500 }}>{t}%</span>
+                        ))}
+                      </div>
+                      {/* Zone labels */}
+                      <div style={{ display:'flex', gap:6, marginTop:10, flexWrap:'wrap' }}>
+                        {[
+                          { label:'None', color:'#9CA3AF', bg:'#F1F5F9', range:'0' },
+                          { label:'Low', color:'#22C55E', bg:'#F0FDF4', range:'1–25' },
+                          { label:'Medium', color:'#F59E0B', bg:'#FFFBEB', range:'26–50' },
+                          { label:'High', color:'#EF4444', bg:'#FEF2F2', range:'51–75' },
+                          { label:'Critical', color:'#7C3AED', bg:'#F5F3FF', range:'76–100' },
+                        ].map(z => (
+                          <span key={z.label} style={{ fontSize:10, padding:'2px 9px', borderRadius:20, background:z.bg, color:z.color, fontWeight:600, opacity: lvl.label===z.label ? 1 : 0.4, transition:'opacity 0.2s' }}>
+                            {z.label} <span style={{ opacity:0.7 }}>({z.range}%)</span>
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
           </div>
           <div style={{ gridColumn:'1 / -1' }}>
             <label style={lStyle}>Comments</label>
@@ -998,12 +1329,7 @@ function App() {
             {NAV.find(v=>v.key===view)?.label}
           </h1>
           <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-            {view !== 'dashboard' && view !== 'battleplan' && (
-              <button onClick={()=>setModal('new')}
-                style={{ padding:'7px 16px', background:tweaks.accentColor, color:'#fff', border:'none', borderRadius:8, fontSize:11, fontWeight:700, letterSpacing:'0.03em' }}>
-                + New Project
-              </button>
-            )}
+
             <div style={{ fontSize:11, color:'#B0B7C3', fontWeight:500 }}>FY {new Date().getFullYear()}</div>
           </div>
         </div>
